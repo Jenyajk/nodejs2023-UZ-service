@@ -1,1 +1,4 @@
-export class ArtistDto {}
+export class ArtistDto {
+  name: string;
+  grammy: boolean;
+}

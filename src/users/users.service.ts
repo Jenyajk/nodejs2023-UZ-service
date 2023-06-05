@@ -3,8 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '../models/user.model';
+import { User, UserResponse } from '../models/user.model';
 import { v4 as uuidv4 } from 'uuid';
+import { validate } from 'uuid';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
 import { DatabaseService } from '../database/database.service';
 
@@ -12,19 +13,21 @@ import { DatabaseService } from '../database/database.service';
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  getAllUsers(): User[] {
-    return this.databaseService.users;
+  getAllUsers(): UserResponse[] {
+    return this.databaseService.users.map((user) =>
+      this.mapUserToResponse(user),
+    );
   }
 
-  getUserById(id: string): User {
+  getUserById(id: string): UserResponse {
     const user = this.databaseService.users.find((user) => user.id === id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+    return this.mapUserToResponse(user);
   }
 
-  createUser(createUserDto: CreateUserDto): User {
+  createUser(createUserDto: CreateUserDto): UserResponse {
     if (!createUserDto.login || !createUserDto.password) {
       throw new BadRequestException('Missing login or password');
     }
@@ -39,32 +42,45 @@ export class UsersService {
     };
 
     this.databaseService.users.push(newUser);
-    return newUser;
+    return this.mapUserToResponse(newUser);
   }
 
-  updateUser(id: string, updatePasswordDto: UpdatePasswordDto): User {
-    const user = this.getUserById(id);
+  updateUser(id: string, updatePasswordDto: UpdatePasswordDto): UserResponse {
+    const user = this.getUserById(id) as User;
 
     if (user.password !== updatePasswordDto.oldPassword) {
       throw new BadRequestException('Invalid old password');
     }
 
-    user.password = updatePasswordDto.newPassword;
-    user.version++;
-    user.updatedAt = Date.now();
+    const updatedUser: UserResponse = {
+      id: user.id,
+      login: user.login,
+      version: user.version + 1,
+      createdAt: user.createdAt,
+      updatedAt: Date.now(),
+    };
 
-    return user;
+    return updatedUser;
   }
 
   deleteUser(id: string): void {
-    const index = this.databaseService.users.findIndex(
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid userId');
+    }
+
+    const userIndex = this.databaseService.users.findIndex(
       (user) => user.id === id,
     );
 
-    if (index === -1) {
+    if (userIndex === -1) {
       throw new NotFoundException('User not found');
     }
 
-    this.databaseService.users.splice(index, 1);
+    this.databaseService.users.splice(userIndex, 1);
+  }
+
+  private mapUserToResponse(user: User): UserResponse {
+    const { id, login, version, createdAt, updatedAt } = user;
+    return { id, login, version, createdAt, updatedAt };
   }
 }

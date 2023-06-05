@@ -7,26 +7,26 @@ import {
   Put,
   Delete,
 } from '@nestjs/common';
-import { User } from '../models/user.model';
+import { UserResponse } from '../models/user.model';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
 
-@Controller('users')
+@Controller('user')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  getAllUsers(): User[] {
+  getAllUsers(): UserResponse[] {
     return this.usersService.getAllUsers();
   }
 
   @Get(':id')
-  getUserById(@Param('id') id: string): User | undefined {
+  getUserById(@Param('id') id: string): UserResponse {
     return this.usersService.getUserById(id);
   }
 
   @Post()
-  createUser(@Body() createUserDto: CreateUserDto): User {
+  createUser(@Body() createUserDto: CreateUserDto): UserResponse {
     return this.usersService.createUser(createUserDto);
   }
 
@@ -34,7 +34,7 @@ export class UsersController {
   updateUser(
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
-  ): User | undefined {
+  ): UserResponse {
     return this.usersService.updateUser(id, updatePasswordDto);
   }
 
