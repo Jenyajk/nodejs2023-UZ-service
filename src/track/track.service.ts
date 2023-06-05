@@ -2,26 +2,29 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { Track } from '../models/track.model';
 import { TrackDto } from './track.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { validate } from 'uuid';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class TrackService {
-  private tracks: Track[] = [];
-
+  constructor(private readonly databaseService: DatabaseService) {}
   getAllTracks(): Track[] {
-    return this.tracks;
+    return this.databaseService.tracks;
   }
 
-  getTrackById(id: string): Track {
-    const track = this.tracks.find((t) => t.id === id);
-    if (!track) {
-      throw new NotFoundException('Track not found');
+  getTrackById(id: string): Track | undefined {
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid trackId');
     }
-    return track;
+
+    const track = this.databaseService.tracks.find((t) => t.id === id);
+    return track || undefined;
   }
 
   createTrack(createTrackDto: TrackDto): Track {
@@ -37,12 +40,18 @@ export class TrackService {
       duration: createTrackDto.duration,
     };
 
-    this.tracks.push(newTrack);
+    this.databaseService.tracks.push(newTrack);
     return newTrack;
   }
-
   updateTrack(id: string, createTrackDto: TrackDto): Track {
-    const track = this.getTrackById(id);
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid trackId');
+    }
+
+    const track = this.databaseService.tracks.find((t) => t.id === id);
+    if (!track) {
+      throw new NotFoundException('Track not found');
+    }
 
     if (!createTrackDto.name || !createTrackDto.duration) {
       throw new BadRequestException('Name and duration are required');
@@ -61,11 +70,13 @@ export class TrackService {
       throw new BadRequestException('Invalid trackId');
     }
 
-    const trackIndex = this.tracks.findIndex((t) => t.id === id);
+    const trackIndex = this.databaseService.tracks.findIndex(
+      (t) => t.id === id,
+    );
     if (trackIndex === -1) {
       throw new NotFoundException('Track not found');
     }
 
-    this.tracks.splice(trackIndex, 1);
+    this.databaseService.tracks.splice(trackIndex, 1);
   }
 }

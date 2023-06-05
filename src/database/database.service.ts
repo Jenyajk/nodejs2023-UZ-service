@@ -7,7 +7,7 @@ import { Album } from '../models/album.model';
 @Injectable()
 export class DatabaseService {
   public users: User[] = [];
-  public track: Track[] = [];
+  public tracks: Track[] = [];
   public artists: Artist[] = [];
   public albums: Album[] = [];
 
@@ -20,6 +20,6 @@ export class DatabaseService {
   }
 
   getTrackById(id: string): Track | undefined {
-    return this.track.find((track) => track.id === id);
+    return this.tracks.find((track) => track.id === id);
   }
 }

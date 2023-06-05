@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  ForbiddenException,
+  HttpCode,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { validate } from 'uuid';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
 import { DatabaseService } from '../database/database.service';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
@@ -20,6 +23,9 @@ export class UsersService {
   }
 
   getUserById(id: string): UserResponse {
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid userId');
+    }
     const user = this.databaseService.users.find((user) => user.id === id);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -45,22 +51,28 @@ export class UsersService {
     return this.mapUserToResponse(newUser);
   }
 
+  @HttpCode(HttpStatus.OK)
   updateUser(id: string, updatePasswordDto: UpdatePasswordDto): UserResponse {
-    const user = this.getUserById(id) as User;
-
-    if (user.password !== updatePasswordDto.oldPassword) {
-      throw new BadRequestException('Invalid old password');
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid userId');
     }
 
-    const updatedUser: UserResponse = {
-      id: user.id,
-      login: user.login,
-      version: user.version + 1,
-      createdAt: user.createdAt,
-      updatedAt: Date.now(),
-    };
+    const user = this.getUserById(id) as User;
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-    return updatedUser;
+    if (updatePasswordDto.newPassword === updatePasswordDto.oldPassword)
+      throw new ForbiddenException('You can not write the same password');
+    if (user.password !== updatePasswordDto.oldPassword) {
+      throw new ForbiddenException('Invalid old password');
+    }
+
+    user.password = updatePasswordDto.newPassword;
+    user.version += 1;
+    user.updatedAt = Date.now();
+
+    return user;
   }
 
   deleteUser(id: string): void {
@@ -77,6 +89,8 @@ export class UsersService {
     }
 
     this.databaseService.users.splice(userIndex, 1);
+
+    throw new HttpException(null, HttpStatus.NO_CONTENT);
   }
 
   private mapUserToResponse(user: User): UserResponse {

@@ -6,6 +6,8 @@ import {
   Body,
   Put,
   Delete,
+  HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { UserResponse } from '../models/user.model';
 import { UsersService } from './users.service';
@@ -31,6 +33,7 @@ export class UsersController {
   }
 
   @Put(':id')
+  @HttpCode(HttpStatus.OK)
   updateUser(
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,

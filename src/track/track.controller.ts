@@ -1,40 +1,46 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Delete,
-  Get,
   NotFoundException,
   Param,
+  HttpStatus,
+  Get,
+  HttpCode,
   Post,
+  Body,
   Put,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { TrackDto } from './track.dto';
 import { Track } from '../models/track.model';
 import { TrackService } from './track.service';
+import { validate } from 'uuid';
 
 @Controller('track')
 export class TrackController {
-  constructor(private readonly tracksService: TrackService) {}
+  constructor(private readonly trackService: TrackService) {}
 
   @Get()
   getAllTracks(): Track[] {
-    return this.tracksService.getAllTracks();
+    return this.trackService.getAllTracks();
   }
 
   @Get(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   getTrackById(@Param('id') id: string): Track {
-    try {
-      return this.tracksService.getTrackById(id);
-    } catch (error) {
-      throw new NotFoundException(error.message);
+    const track = this.trackService.getTrackById(id);
+    if (!track) {
+      throw new NotFoundException('Track not found');
     }
+
+    return track;
   }
 
   @Post()
   createTrack(@Body() createTrackDto: TrackDto): Track {
     try {
-      return this.tracksService.createTrack(createTrackDto);
+      return this.trackService.createTrack(createTrackDto);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -46,18 +52,32 @@ export class TrackController {
     @Body() createTrackDto: TrackDto,
   ): Track {
     try {
-      return this.tracksService.updateTrack(id, createTrackDto);
+      return this.trackService.updateTrack(id, createTrackDto);
     } catch (error) {
-      throw new NotFoundException(error.message);
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      } else if (error instanceof BadRequestException) {
+        throw new BadRequestException(error.message);
+      } else {
+        throw new InternalServerErrorException(
+          'An error occurred while updating the track',
+        );
+      }
     }
   }
 
   @Delete(':id')
+  @HttpCode(204)
   deleteTrack(@Param('id') id: string): void {
-    try {
-      this.tracksService.deleteTrack(id);
-    } catch (error) {
-      throw new NotFoundException(error.message);
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid trackId');
     }
+
+    const trackExists = this.trackService.getTrackById(id);
+    if (!trackExists) {
+      throw new NotFoundException('Track not found');
+    }
+
+    this.trackService.deleteTrack(id);
   }
 }
