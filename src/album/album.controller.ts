@@ -4,6 +4,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   Post,
@@ -12,6 +14,7 @@ import {
 import { Album } from '../models/album.model';
 import { AlbumDto } from './album.dto';
 import { AlbumService } from './album.service';
+import { validate } from 'uuid';
 
 @Controller('album')
 export class AlbumController {
@@ -45,6 +48,14 @@ export class AlbumController {
     @Param('id') id: string,
     @Body() createAlbumDto: AlbumDto,
   ): Album {
+    if (!createAlbumDto.name || createAlbumDto.name.trim() === '') {
+      throw new BadRequestException('Name is required');
+    }
+
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid albumId');
+    }
+
     try {
       return this.albumsService.updateAlbum(id, createAlbumDto);
     } catch (error) {
@@ -52,8 +63,13 @@ export class AlbumController {
     }
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   deleteAlbum(@Param('id') id: string): void {
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid albumId');
+    }
+
     try {
       this.albumsService.deleteAlbum(id);
     } catch (error) {

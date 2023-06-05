@@ -48,7 +48,11 @@ export class ArtistService {
   updateArtist(id: string, updateArtistDto: ArtistDto): void {
     const artist = this.getArtistById(id);
 
-    if (!updateArtistDto.name || updateArtistDto.name.trim() === '') {
+    if (
+      !updateArtistDto.name ||
+      typeof updateArtistDto.name !== 'string' ||
+      updateArtistDto.name.trim() === ''
+    ) {
       throw new BadRequestException('Name is required');
     }
 
@@ -57,6 +61,9 @@ export class ArtistService {
   }
 
   deleteArtist(id: string): void {
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid userId');
+    }
     const artistIndex = this.databaseService.artists.findIndex(
       (artist) => artist.id === id,
     );
@@ -68,6 +75,11 @@ export class ArtistService {
     this.databaseService.albums.forEach((album) => {
       if (album.artistId === id) {
         album.artistId = null;
+      }
+    });
+    this.databaseService.tracks.forEach((track) => {
+      if (track.artistId === id) {
+        track.artistId = null;
       }
     });
 

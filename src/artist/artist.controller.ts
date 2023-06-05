@@ -56,22 +56,26 @@ export class ArtistController {
   @HttpCode(HttpStatus.NO_CONTENT)
   updateArtist(
     @Param('id') id: string,
-    @Body() createArtistDto: ArtistDto,
+    @Body() updateArtistDto: ArtistDto,
   ): void {
     try {
-      this.artistsService.updateArtist(id, createArtistDto);
+      this.artistsService.updateArtist(id, updateArtistDto);
     } catch (error) {
-      throw new NotFoundException(error.message);
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
     }
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteArtist(@Param('id') id: string): void {
-    try {
-      this.artistsService.deleteArtist(id);
-    } catch (error) {
-      throw new NotFoundException(error.message);
+    const artist = this.artistsService.getArtistById(id);
+    if (!artist) {
+      throw new NotFoundException('Artist not found');
     }
+
+    this.artistsService.deleteArtist(id);
   }
 }

@@ -1,9 +1,11 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4, validate } from 'uuid';
 import { Album } from '../models/album.model';
 import { AlbumDto } from './album.dto';
 import { DatabaseService } from '../database/database.service';
@@ -17,6 +19,9 @@ export class AlbumService {
   }
 
   getAlbumById(id: string): Album {
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid userId');
+    }
     const album = this.databaseService.getAlbumById(id);
     if (!album) {
       throw new NotFoundException('Album not found');
@@ -55,6 +60,10 @@ export class AlbumService {
   }
 
   deleteAlbum(id: string): void {
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid albumId');
+    }
+
     const albumIndex = this.databaseService.albums.findIndex(
       (album) => album.id === id,
     );
@@ -62,6 +71,12 @@ export class AlbumService {
     if (albumIndex === -1) {
       throw new NotFoundException('Album not found');
     }
+
+    this.databaseService.tracks.forEach((track) => {
+      if (track.albumId === id) {
+        track.albumId = null;
+      }
+    });
 
     this.databaseService.albums.splice(albumIndex, 1);
   }
