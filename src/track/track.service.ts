@@ -6,6 +6,7 @@ import {
 import { Track } from '../models/track.model';
 import { TrackDto } from './track.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { validate } from 'uuid';
 
 @Injectable()
 export class TrackService {
@@ -56,10 +57,15 @@ export class TrackService {
   }
 
   deleteTrack(id: string): void {
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid trackId');
+    }
+
     const trackIndex = this.tracks.findIndex((t) => t.id === id);
     if (trackIndex === -1) {
       throw new NotFoundException('Track not found');
     }
+
     this.tracks.splice(trackIndex, 1);
   }
 }

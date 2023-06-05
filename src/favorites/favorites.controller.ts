@@ -11,7 +11,7 @@ import {
 import { FavoritesService } from './favorites.service';
 import { FavoritesResponse } from './favorites.dto';
 
-@Controller('favorites')
+@Controller('favs')
 export class FavoritesController {
   constructor(private readonly favoritesService: FavoritesService) {}
 
