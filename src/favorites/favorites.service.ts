@@ -21,7 +21,7 @@ export class FavoritesService {
     const track = this.databaseService.getTrackById(trackId);
 
     if (!track) {
-      throw new NotFoundException('Track not found');
+      throw new BadRequestException('Track not found');
     }
 
     this.databaseService.favorites.tracks.push(trackId);
@@ -53,7 +53,7 @@ export class FavoritesService {
     const album = this.databaseService.getAlbumById(albumId);
 
     if (!album) {
-      throw new NotFoundException('Album not found');
+      throw new BadRequestException('Track not found');
     }
 
     this.databaseService.favorites.albums.push(albumId);
@@ -85,7 +85,7 @@ export class FavoritesService {
     const artist = this.databaseService.getArtistById(artistId);
 
     if (!artist) {
-      throw new NotFoundException('Artist not found');
+      throw new BadRequestException('Track not found');
     }
 
     this.databaseService.favorites.artists.push(artistId);
