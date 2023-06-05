@@ -4,6 +4,9 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
@@ -27,11 +30,20 @@ export class ArtistController {
     try {
       return this.artistsService.getArtistById(id);
     } catch (error) {
-      throw new NotFoundException(error.message);
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      } else if (error instanceof BadRequestException) {
+        throw new BadRequestException(error.message);
+      } else {
+        throw new InternalServerErrorException(
+          'An error occurred while retrieving the artist',
+        );
+      }
     }
   }
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   createArtist(@Body() createArtistDto: ArtistDto): Artist {
     try {
       return this.artistsService.createArtist(createArtistDto);
@@ -41,18 +53,20 @@ export class ArtistController {
   }
 
   @Put(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   updateArtist(
     @Param('id') id: string,
     @Body() createArtistDto: ArtistDto,
-  ): Artist {
+  ): void {
     try {
-      return this.artistsService.updateArtist(id, createArtistDto);
+      this.artistsService.updateArtist(id, createArtistDto);
     } catch (error) {
       throw new NotFoundException(error.message);
     }
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   deleteArtist(@Param('id') id: string): void {
     try {
       this.artistsService.deleteArtist(id);

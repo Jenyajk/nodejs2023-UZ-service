@@ -6,17 +6,18 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { Album } from '../models/album.model';
 import { AlbumDto } from './album.dto';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class AlbumService {
-  private albums: Album[] = [];
+  constructor(private databaseService: DatabaseService) {}
 
   getAllAlbums(): Album[] {
-    return this.albums;
+    return this.databaseService.albums;
   }
 
   getAlbumById(id: string): Album {
-    const album = this.albums.find((album) => album.id === id);
+    const album = this.databaseService.getAlbumById(id);
     if (!album) {
       throw new NotFoundException('Album not found');
     }
@@ -35,39 +36,33 @@ export class AlbumService {
       artistId: createAlbumDto.artistId,
     };
 
-    this.albums.push(newAlbum);
+    this.databaseService.albums.push(newAlbum);
     return newAlbum;
   }
 
   updateAlbum(id: string, createAlbumDto: AlbumDto): Album {
-    const albumIndex = this.albums.findIndex((album) => album.id === id);
-
-    if (albumIndex === -1) {
-      throw new NotFoundException('Album not found');
-    }
+    const album = this.getAlbumById(id);
 
     if (!createAlbumDto.name || createAlbumDto.name.trim() === '') {
       throw new BadRequestException('Name is required');
     }
 
-    const updatedAlbum: Album = {
-      id: id,
-      name: createAlbumDto.name,
-      year: createAlbumDto.year,
-      artistId: createAlbumDto.artistId,
-    };
+    album.name = createAlbumDto.name;
+    album.year = createAlbumDto.year;
+    album.artistId = createAlbumDto.artistId;
 
-    this.albums[albumIndex] = updatedAlbum;
-    return updatedAlbum;
+    return album;
   }
 
   deleteAlbum(id: string): void {
-    const albumIndex = this.albums.findIndex((album) => album.id === id);
+    const albumIndex = this.databaseService.albums.findIndex(
+      (album) => album.id === id,
+    );
 
     if (albumIndex === -1) {
       throw new NotFoundException('Album not found');
     }
 
-    this.albums.splice(albumIndex, 1);
+    this.databaseService.albums.splice(albumIndex, 1);
   }
 }

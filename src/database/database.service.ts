@@ -3,6 +3,7 @@ import { User } from '../models/user.model';
 import { Track } from '../models/track.model';
 import { Artist } from '../models/artist.model';
 import { Album } from '../models/album.model';
+import { Favorites } from '../models/favorites.model';
 
 @Injectable()
 export class DatabaseService {
@@ -10,6 +11,11 @@ export class DatabaseService {
   public tracks: Track[] = [];
   public artists: Artist[] = [];
   public albums: Album[] = [];
+  public favorites: Favorites = {
+    artists: [],
+    albums: [],
+    tracks: [],
+  };
 
   getArtistById(id: string): Artist | undefined {
     return this.artists.find((artist) => artist.id === id);

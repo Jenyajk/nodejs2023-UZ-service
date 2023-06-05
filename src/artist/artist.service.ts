@@ -6,22 +6,27 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { ArtistDto } from './artist.dto';
 import { Artist } from '../models/artist.model';
-import { Album } from '../models/album.model';
+import { validate } from 'uuid';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class ArtistService {
-  private artists: Artist[] = [];
-  private albums: Album[] = [];
+  constructor(private readonly databaseService: DatabaseService) {}
 
   getAllArtists(): Artist[] {
-    return this.artists;
+    return this.databaseService.artists;
   }
 
   getArtistById(id: string): Artist {
-    const artist = this.artists.find((artist) => artist.id === id);
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid artistId');
+    }
+
+    const artist = this.databaseService.getArtistById(id);
     if (!artist) {
       throw new NotFoundException('Artist not found');
     }
+
     return artist;
   }
 
@@ -36,43 +41,36 @@ export class ArtistService {
       grammy: createArtistDto.grammy,
     };
 
-    this.artists.push(newArtist);
+    this.databaseService.artists.push(newArtist);
     return newArtist;
   }
 
-  updateArtist(id: string, createArtistDto: ArtistDto): Artist {
-    const artistIndex = this.artists.findIndex((artist) => artist.id === id);
+  updateArtist(id: string, updateArtistDto: ArtistDto): void {
+    const artist = this.getArtistById(id);
 
-    if (artistIndex === -1) {
-      throw new NotFoundException('Artist not found');
-    }
-
-    if (!createArtistDto.name || createArtistDto.name.trim() === '') {
+    if (!updateArtistDto.name || updateArtistDto.name.trim() === '') {
       throw new BadRequestException('Name is required');
     }
 
-    const updatedArtist: Artist = {
-      id: id,
-      name: createArtistDto.name,
-      grammy: createArtistDto.grammy,
-    };
-
-    this.artists[artistIndex] = updatedArtist;
-    return updatedArtist;
+    artist.name = updateArtistDto.name;
+    artist.grammy = updateArtistDto.grammy;
   }
 
   deleteArtist(id: string): void {
-    const artistIndex = this.artists.findIndex((artist) => artist.id === id);
+    const artistIndex = this.databaseService.artists.findIndex(
+      (artist) => artist.id === id,
+    );
 
     if (artistIndex === -1) {
       throw new NotFoundException('Artist not found');
     }
 
-    this.artists.splice(artistIndex, 1);
-    this.albums.forEach((album) => {
+    this.databaseService.albums.forEach((album) => {
       if (album.artistId === id) {
         album.artistId = null;
       }
     });
+
+    this.databaseService.artists.splice(artistIndex, 1);
   }
 }
