@@ -36,6 +36,10 @@ export class AlbumController {
 
   @Post()
   createAlbum(@Body() createAlbumDto: AlbumDto): Album {
+    if (!createAlbumDto.name || createAlbumDto.name.trim() === '') {
+      throw new BadRequestException('Name is required');
+    }
+
     try {
       return this.albumsService.createAlbum(createAlbumDto);
     } catch (error) {
@@ -48,7 +52,7 @@ export class AlbumController {
     @Param('id') id: string,
     @Body() createAlbumDto: AlbumDto,
   ): Album {
-    if (!createAlbumDto.name || createAlbumDto.name.trim() === '') {
+    if (!createAlbumDto.name || String(createAlbumDto.name).trim() === '') {
       throw new BadRequestException('Name is required');
     }
 

@@ -12,3 +12,15 @@ export class AlbumDto {
   @IsOptional()
   artistId: string | null;
 }
+export class UpdateAlbumDto {
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  year: number;
+
+  @IsOptional()
+  artistId: string | null;
+}

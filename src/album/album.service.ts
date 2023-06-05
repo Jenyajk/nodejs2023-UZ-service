@@ -20,12 +20,15 @@ export class AlbumService {
 
   getAlbumById(id: string): Album {
     if (!validate(id)) {
-      throw new BadRequestException('Invalid userId');
+      throw new BadRequestException('Invalid albumId');
     }
+
     const album = this.databaseService.getAlbumById(id);
+
     if (!album) {
-      throw new NotFoundException('Album not found');
+      throw new BadRequestException('Album not found');
     }
+
     return album;
   }
 
