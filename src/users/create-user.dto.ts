@@ -1,0 +1,22 @@
+import { IsString } from 'class-validator';
+import { IsNotEmpty } from 'class-validator';
+
+export class CreateUserDto {
+  @IsNotEmpty()
+  @IsString()
+  login: string;
+
+  @IsNotEmpty()
+  @IsString()
+  password: string;
+}
+
+export class UpdatePasswordDto {
+  @IsNotEmpty()
+  @IsString()
+  oldPassword: string;
+
+  @IsNotEmpty()
+  @IsString()
+  newPassword: string;
+}
