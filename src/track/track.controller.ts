@@ -16,6 +16,7 @@ import { TrackDto } from './track.dto';
 import { Track } from '../models/track.model';
 import { TrackService } from './track.service';
 import { validate } from 'uuid';
+import { TrackEntity } from './track.model';
 
 @Controller('track')
 export class TrackController {
@@ -27,8 +28,8 @@ export class TrackController {
   }
 
   @Get(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  getTrackById(@Param('id') id: string): Track {
+  @HttpCode(HttpStatus.OK)
+  getTrackById(@Param('id') id: string): TrackEntity {
     const track = this.trackService.getTrackById(id);
     if (!track) {
       throw new NotFoundException('Track not found');

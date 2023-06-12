@@ -10,6 +10,7 @@ import { TrackDto } from './track.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { validate } from 'uuid';
 import { DatabaseService } from '../database/database.service';
+import { TrackEntity } from './track.model';
 
 @Injectable()
 export class TrackService {
@@ -23,11 +24,13 @@ export class TrackService {
       throw new BadRequestException('Invalid trackId');
     }
 
-    const track = this.databaseService.tracks.find((t) => t.id === id);
-    return track || undefined;
+    const track = this.databaseService.tracks.find(
+      ({ id: userId }) => userId === id,
+    );
+    return track ?? null;
   }
 
-  createTrack(createTrackDto: TrackDto): Track {
+  createTrack(createTrackDto: TrackDto): TrackEntity {
     if (!createTrackDto.name || !createTrackDto.duration) {
       throw new BadRequestException('Name and duration are required');
     }
@@ -78,5 +81,20 @@ export class TrackService {
     }
 
     this.databaseService.tracks.splice(trackIndex, 1);
+  }
+  removeArtistId(id: string) {
+    this.databaseService.tracks.forEach((track) => {
+      if (track.artistId === id) {
+        track.artistId = null;
+      }
+    });
+  }
+
+  removeAlbumId(id: string) {
+    this.databaseService.tracks.forEach((track) => {
+      if (track.albumId === id) {
+        track.albumId = null;
+      }
+    });
   }
 }

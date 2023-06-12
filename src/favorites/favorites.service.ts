@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -152,5 +154,44 @@ export class FavoritesService {
       albums,
       tracks,
     };
+  }
+  remove(id: string, entityType: string, flag: boolean) {
+    const entityIdx = this.databaseService.favorites[
+      `${entityType}s`
+    ].findIndex((entityId) => entityId === id);
+    if (entityIdx === -1) {
+      if (!flag) {
+        throw new HttpException(
+          `${entityType.toUpperCase()} with id:${id} is not favorite`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } else {
+      this.databaseService.favorites[`${entityType}s`].splice(entityIdx, 1);
+    }
+    return { message: `${entityType.toUpperCase()} successfully deleted` };
+  }
+  // addAlbum(id: string) {
+  //   return this.addAlbumMain(id, 'album');
+  // }
+  //
+  // addTrack(id: string) {
+  //   return this.addTrackMain(id, 'track');
+  // }
+  //
+  // addArtist(id: string) {
+  //   return this.addArtistMain(id, 'artist');
+  // }
+
+  removeAlbum(id: string, flag = false) {
+    return this.remove(id, 'album', flag);
+  }
+
+  removeTrack(id: string, flag = false) {
+    return this.remove(id, 'track', flag);
+  }
+
+  removeArtist(id: string, flag = false) {
+    return this.remove(id, 'artist', flag);
   }
 }

@@ -1,14 +1,13 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { v4 as uuidv4, validate } from 'uuid';
 import { Album } from '../models/album.model';
-import { AlbumDto } from './album.dto';
+import { AlbumDto, UpdateAlbumDto } from './album.dto';
 import { DatabaseService } from '../database/database.service';
+import { AlbumEntity } from './album.model';
 
 @Injectable()
 export class AlbumService {
@@ -18,25 +17,17 @@ export class AlbumService {
     return this.databaseService.albums;
   }
 
-  getAlbumById(id: string): Album {
+  getAlbumById(id: string): AlbumEntity {
     if (!validate(id)) {
-      throw new BadRequestException('Invalid albumId');
+      throw new BadRequestException('Invalid album ID');
     }
-
-    const album = this.databaseService.getAlbumById(id);
-
-    if (!album) {
-      throw new BadRequestException('Album not found');
-    }
-
-    return album;
+    return (
+      this.databaseService.albums.find(({ id: albumId }) => albumId === id) ??
+      null
+    );
   }
 
-  createAlbum(createAlbumDto: AlbumDto): Album {
-    if (!createAlbumDto.name || createAlbumDto.name.trim() === '') {
-      throw new BadRequestException('Name is required');
-    }
-
+  createAlbum(createAlbumDto: AlbumDto): AlbumEntity {
     const newAlbum: Album = {
       id: uuidv4(),
       name: createAlbumDto.name,
@@ -48,19 +39,14 @@ export class AlbumService {
     return newAlbum;
   }
 
-  updateAlbum(id: string, createAlbumDto: AlbumDto): Album {
-    const album = this.getAlbumById(id);
-
-    if (!createAlbumDto.name || createAlbumDto.name.trim() === '') {
-      throw new BadRequestException('Name is required');
-    }
-
-    album.name = createAlbumDto.name;
-    album.year = createAlbumDto.year;
-    album.artistId = createAlbumDto.artistId;
-
-    return album;
-  }
+  // updateAlbum(id: string, updateAlbumDto: UpdateAlbumDto): AlbumEntity {
+  //   validate(id);
+  //   const album = this.getAlbumById(id);
+  //   album.name = updateAlbumDto.name;
+  //   album.year = updateAlbumDto.year;
+  //   album.artistId = updateAlbumDto.artistId;
+  //   return album;
+  // }
 
   deleteAlbum(id: string): void {
     if (!validate(id)) {
@@ -82,5 +68,12 @@ export class AlbumService {
     });
 
     this.databaseService.albums.splice(albumIndex, 1);
+  }
+  removeArtistId(id: string) {
+    this.databaseService.albums.forEach((album: Album) => {
+      if (album.artistId === id) {
+        album.artistId = null;
+      }
+    });
   }
 }

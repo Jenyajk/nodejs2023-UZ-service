@@ -8,41 +8,49 @@ import {
   Delete,
   HttpStatus,
   HttpCode,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+  ParseUUIDPipe,
+  BadRequestException,
 } from '@nestjs/common';
-import { UserResponse } from '../models/user.model';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
+import { UserEntity } from './user.model';
 
 @Controller('user')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  getAllUsers(): UserResponse[] {
+  getAllUsers(): Promise<UserEntity[]> {
     return this.usersService.getAllUsers();
   }
 
   @Get(':id')
-  getUserById(@Param('id') id: string): UserResponse {
+  getUserById(@Param('id', ParseUUIDPipe) id: string): Promise<UserEntity> {
     return this.usersService.getUserById(id);
   }
 
   @Post()
-  createUser(@Body() createUserDto: CreateUserDto): UserResponse {
-    return this.usersService.createUser(createUserDto);
+  @UseInterceptors(ClassSerializerInterceptor)
+  @HttpCode(HttpStatus.CREATED)
+  async createUser(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
+    return await this.usersService.createUser(createUserDto);
   }
 
   @Put(':id')
+  @UseInterceptors(ClassSerializerInterceptor)
   @HttpCode(HttpStatus.OK)
-  updateUser(
-    @Param('id') id: string,
+  updateUserPassword(
     @Body() updatePasswordDto: UpdatePasswordDto,
-  ): UserResponse {
+    @Param('id') id: string,
+  ): Promise<UserEntity> {
     return this.usersService.updateUser(id, updatePasswordDto);
   }
 
   @Delete(':id')
-  deleteUser(@Param('id') id: string): void {
-    this.usersService.deleteUser(id);
+  //@HttpCode(HttpStatus.NO_CONTENT)
+  deleteUser(@Param('id') id: string): Promise<void> {
+    return this.usersService.deleteUser(id);
   }
 }

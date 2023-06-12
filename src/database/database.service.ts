@@ -29,3 +29,37 @@ export class DatabaseService {
     return this.tracks.find((track) => track.id === id);
   }
 }
+
+// import { Injectable } from '@nestjs/common';
+// import { InjectRepository } from '@nestjs/typeorm';
+// import { Repository } from 'typeorm';
+// import { UserEntity } from '../users/user.model';
+// import { TrackEntity } from '../track/track.model';
+// import { ArtistEntity } from '../artist/artist.model';
+// import { AlbumEntity } from '../album/album.model';
+//
+// @Injectable()
+// export class DatabaseService {
+//   constructor(
+//     @InjectRepository(UserEntity)
+//     private readonly userRepository: Repository<UserEntity>,
+//     @InjectRepository(TrackEntity)
+//     private readonly trackRepository: Repository<TrackEntity>,
+//     @InjectRepository(ArtistEntity)
+//     private readonly artistRepository: Repository<ArtistEntity>,
+//     @InjectRepository(AlbumEntity)
+//     private readonly albumRepository: Repository<AlbumEntity>,
+//   ) {}
+//
+//   // async getArtistById(id: string): Promise<Artist | undefined> {
+//   //   return this.artistRepository.findOne(id);
+//   // }
+//   //
+//   // async getAlbumById(id: string): Promise<Album | undefined> {
+//   //   return this.albumRepository.findOne(id);
+//   // }
+//   //
+//   // async getTrackById(id: string): Promise<Track | undefined> {
+//   //   return this.trackRepository.findOne(id);
+//   // }
+// }

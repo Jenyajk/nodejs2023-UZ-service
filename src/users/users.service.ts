@@ -1,69 +1,72 @@
 import {
   BadRequestException,
   ForbiddenException,
-  HttpCode,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { User, UserResponse } from '../models/user.model';
-import { v4 as uuidv4 } from 'uuid';
 import { validate } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
-import { DatabaseService } from '../database/database.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { UserEntity } from './user.model';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
+  ) {}
 
-  getAllUsers(): UserResponse[] {
-    return this.databaseService.users.map((user) =>
-      this.mapUserToResponse(user),
-    );
+  async getAllUsers(): Promise<UserEntity[]> {
+    return await this.userRepository.find();
   }
 
-  getUserById(id: string): UserResponse {
+  async getUserById(id: string): Promise<UserEntity> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid userId');
     }
-    const user = this.databaseService.users.find((user) => user.id === id);
+    const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return this.mapUserToResponse(user);
+    return user;
   }
 
-  createUser(createUserDto: CreateUserDto): UserResponse {
+  async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
     if (!createUserDto.login || !createUserDto.password) {
       throw new BadRequestException('Missing login or password');
     }
+    const newUser = this.userRepository.create();
+    newUser.id = uuidv4();
+    newUser.login = createUserDto.login;
+    newUser.password = createUserDto.password;
+    newUser.version = 1;
+    newUser.createdAt = Date.now();
+    newUser.updatedAt = Date.now();
 
-    const newUser: User = {
-      id: uuidv4(),
-      login: createUserDto.login,
-      password: createUserDto.password,
-      version: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-
-    this.databaseService.users.push(newUser);
-    return this.mapUserToResponse(newUser);
+    return this.userRepository.save(newUser);
   }
 
-  @HttpCode(HttpStatus.OK)
-  updateUser(id: string, updatePasswordDto: UpdatePasswordDto): UserResponse {
+  async updateUser(
+    id: string,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<UserEntity> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid userId');
     }
 
-    const user = this.getUserById(id) as User;
+    const user = await this.getUserById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    if (updatePasswordDto.newPassword === updatePasswordDto.oldPassword)
-      throw new ForbiddenException('You can not write the same password');
+    if (updatePasswordDto.newPassword === updatePasswordDto.oldPassword) {
+      throw new ForbiddenException('You cannot set the same password');
+    }
+
     if (user.password !== updatePasswordDto.oldPassword) {
       throw new ForbiddenException('Invalid old password');
     }
@@ -72,29 +75,38 @@ export class UsersService {
     user.version += 1;
     user.updatedAt = Date.now();
 
-    return user;
+    const updatedUser = await this.userRepository.save(user);
+    if (!updatedUser) {
+      throw new HttpException(
+        'Failed to update user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return updatedUser;
   }
 
-  deleteUser(id: string): void {
+  async deleteUser(id: string): Promise<void> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid userId');
     }
 
-    const userIndex = this.databaseService.users.findIndex(
-      (user) => user.id === id,
-    );
-
-    if (userIndex === -1) {
+    const user = await this.getUserById(id);
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    this.databaseService.users.splice(userIndex, 1);
-
-    throw new HttpException(null, HttpStatus.NO_CONTENT);
+    const deletionResult = await this.userRepository.delete(user.id);
+    if (!deletionResult.affected) {
+      throw new HttpException(
+        'Failed to delete user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  private mapUserToResponse(user: User): UserResponse {
-    const { id, login, version, createdAt, updatedAt } = user;
-    return { id, login, version, createdAt, updatedAt };
-  }
+  // private mapUserToResponse(user: User): UserResponse {
+  //   const { id, login, version, createdAt, updatedAt } = user;
+  //   return { id, login, version, createdAt, updatedAt };
+  // }
 }

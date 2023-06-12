@@ -8,63 +8,71 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Album } from '../models/album.model';
-import { AlbumDto } from './album.dto';
+import { AlbumDto, UpdateAlbumDto } from './album.dto';
 import { AlbumService } from './album.service';
 import { validate } from 'uuid';
+import { AlbumEntity } from './album.model';
 
 @Controller('album')
 export class AlbumController {
   constructor(private readonly albumsService: AlbumService) {}
 
   @Get()
-  getAllAlbums(): Album[] {
+  @HttpCode(HttpStatus.OK)
+  getAllAlbums(): AlbumEntity[] {
     return this.albumsService.getAllAlbums();
   }
 
   @Get(':id')
-  getAlbumById(@Param('id') id: string): Album {
-    try {
-      return this.albumsService.getAlbumById(id);
-    } catch (error) {
-      throw new NotFoundException(error.message);
+  @HttpCode(HttpStatus.OK)
+  getAlbumById(
+    @Param(
+      'id',
+      new ValidationPipe({
+        transform: true,
+        exceptionFactory: () => new BadRequestException('Invalid album ID'),
+      }),
+    )
+    id: string,
+  ): AlbumEntity {
+    const album = this.albumsService.getAlbumById(id);
+    if (!album) {
+      throw new NotFoundException('Album not found');
     }
+    return album;
   }
 
   @Post()
-  createAlbum(@Body() createAlbumDto: AlbumDto): Album {
-    if (!createAlbumDto.name || createAlbumDto.name.trim() === '') {
-      throw new BadRequestException('Name is required');
-    }
-
-    try {
-      return this.albumsService.createAlbum(createAlbumDto);
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
+  @HttpCode(HttpStatus.CREATED)
+  createAlbum(@Body() createAlbumDto: AlbumDto): AlbumEntity {
+    return this.albumsService.createAlbum(createAlbumDto);
   }
 
   @Put(':id')
-  updateAlbum(
-    @Param('id') id: string,
-    @Body() createAlbumDto: AlbumDto,
-  ): Album {
-    if (!createAlbumDto.name || String(createAlbumDto.name).trim() === '') {
-      throw new BadRequestException('Name is required');
-    }
-
+  @HttpCode(HttpStatus.OK)
+  updateAlbumInfo(
+    @Body() updateAlbumDto: UpdateAlbumDto,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
     if (!validate(id)) {
-      throw new BadRequestException('Invalid albumId');
+      throw new BadRequestException('Invalid Id');
+    }
+    const album = this.albumsService.getAlbumById(id);
+    if (!album) {
+      throw new NotFoundException('Album not found');
     }
 
-    try {
-      return this.albumsService.updateAlbum(id, createAlbumDto);
-    } catch (error) {
-      throw new NotFoundException(error.message);
-    }
+    album.name = updateAlbumDto.name;
+    album.year = updateAlbumDto.year;
+    album.artistId = updateAlbumDto.artistId;
+
+    return album;
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
