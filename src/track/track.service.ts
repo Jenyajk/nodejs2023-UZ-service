@@ -6,15 +6,19 @@ import {
 import { TrackDto } from './track.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { validate } from 'uuid';
-import { DatabaseService } from '../database/database.service';
 import { TrackEntity } from './track.model';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TrackService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    @InjectRepository(TrackEntity)
+    private trackRepository: Repository<TrackEntity>,
+  ) {}
 
   async getAllTracks(): Promise<TrackEntity[]> {
-    return await this.databaseService.trackRepository.find();
+    return await this.trackRepository.find();
   }
 
   async getTrackById(id: string): Promise<TrackEntity> {
@@ -22,7 +26,7 @@ export class TrackService {
       throw new BadRequestException('Invalid trackId');
     }
 
-    const track = await this.databaseService.trackRepository.findOne({
+    const track = await this.trackRepository.findOne({
       where: { id },
     });
     if (!track) {
@@ -45,7 +49,7 @@ export class TrackService {
       duration: createTrackDto.duration,
     };
 
-    return await this.databaseService.trackRepository.save(newTrack);
+    return await this.trackRepository.save(newTrack);
   }
 
   async updateTrack(
@@ -56,7 +60,7 @@ export class TrackService {
       throw new BadRequestException('Invalid trackId');
     }
 
-    const track = await this.databaseService.trackRepository.findOne({
+    const track = await this.trackRepository.findOne({
       where: { id },
     });
     if (!track) {
@@ -72,7 +76,7 @@ export class TrackService {
     track.albumId = createTrackDto.albumId;
     track.duration = createTrackDto.duration;
 
-    return await this.databaseService.trackRepository.save(track);
+    return await this.trackRepository.save(track);
   }
 
   async deleteTrack(id: string): Promise<void> {
@@ -80,27 +84,21 @@ export class TrackService {
       throw new BadRequestException('Invalid trackId');
     }
 
-    const track = await this.databaseService.trackRepository.findOne({
+    const track = await this.trackRepository.findOne({
       where: { id },
     });
     if (!track) {
       throw new NotFoundException('Track not found');
     }
 
-    await this.databaseService.trackRepository.delete(id);
+    await this.trackRepository.delete(id);
   }
 
   async removeArtistId(id: string): Promise<void> {
-    await this.databaseService.trackRepository.update(
-      { artistId: id },
-      { artistId: null },
-    );
+    await this.trackRepository.update({ artistId: id }, { artistId: null });
   }
 
   async removeAlbumId(id: string): Promise<void> {
-    await this.databaseService.trackRepository.update(
-      { albumId: id },
-      { albumId: null },
-    );
+    await this.trackRepository.update({ albumId: id }, { albumId: null });
   }
 }

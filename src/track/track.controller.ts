@@ -13,7 +13,6 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { TrackDto } from './track.dto';
-import { Track } from '../models/track.model';
 import { TrackService } from './track.service';
 import { validate } from 'uuid';
 import { TrackEntity } from './track.model';
