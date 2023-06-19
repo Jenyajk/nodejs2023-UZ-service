@@ -1,4 +1,4 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude } from 'class-transformer';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
@@ -15,8 +15,10 @@ export class UserEntity {
 
   @Column()
   version: number;
+
   @Column({ type: 'bigint' })
   createdAt: number;
+
   @Column({ type: 'bigint' })
   updatedAt: number;
 

@@ -1,65 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '../models/user.model';
-import { Track } from '../models/track.model';
-import { Artist } from '../models/artist.model';
-import { Album } from '../models/album.model';
-import { Favorites } from '../models/favorites.model';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindOneOptions, Repository } from 'typeorm';
+import { UserEntity } from '../users/user.model';
+import { TrackEntity } from '../track/track.model';
+import { ArtistEntity } from '../artist/artist.model';
+import { AlbumEntity } from '../album/album.model';
+import { FavouritesEntity } from '../favorites/favorites.model';
 
 @Injectable()
 export class DatabaseService {
-  public users: User[] = [];
-  public tracks: Track[] = [];
-  public artists: Artist[] = [];
-  public albums: Album[] = [];
-  public favorites: Favorites = {
-    artists: [],
-    albums: [],
-    tracks: [],
-  };
-
-  getArtistById(id: string): Artist | undefined {
-    return this.artists.find((artist) => artist.id === id);
+  public readonly favorites: FavouritesEntity;
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(TrackEntity)
+    readonly trackRepository: Repository<TrackEntity>,
+    @InjectRepository(ArtistEntity)
+    readonly artistRepository: Repository<ArtistEntity>,
+    @InjectRepository(AlbumEntity)
+    readonly albumRepository: Repository<AlbumEntity>,
+  ) {
+    this.favorites = new FavouritesEntity();
   }
 
-  getAlbumById(id: string): Album | undefined {
-    return this.albums.find((album) => album.id === id);
+  async getTrackById(trackId: string): Promise<TrackEntity> {
+    const options: FindOneOptions = { where: { id: trackId } };
+    return await this.trackRepository.findOne(options);
   }
 
-  getTrackById(id: string): Track | undefined {
-    return this.tracks.find((track) => track.id === id);
+  async getAlbumById(albumId: string): Promise<AlbumEntity> {
+    const options: FindOneOptions = { where: { id: albumId } };
+    return await this.albumRepository.findOne(options);
+  }
+
+  async getArtistById(artistId: string): Promise<ArtistEntity> {
+    const options: FindOneOptions = { where: { id: artistId } };
+    return await this.artistRepository.findOne(options);
   }
 }
-
-// import { Injectable } from '@nestjs/common';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { Repository } from 'typeorm';
-// import { UserEntity } from '../users/user.model';
-// import { TrackEntity } from '../track/track.model';
-// import { ArtistEntity } from '../artist/artist.model';
-// import { AlbumEntity } from '../album/album.model';
-//
-// @Injectable()
-// export class DatabaseService {
-//   constructor(
-//     @InjectRepository(UserEntity)
-//     private readonly userRepository: Repository<UserEntity>,
-//     @InjectRepository(TrackEntity)
-//     private readonly trackRepository: Repository<TrackEntity>,
-//     @InjectRepository(ArtistEntity)
-//     private readonly artistRepository: Repository<ArtistEntity>,
-//     @InjectRepository(AlbumEntity)
-//     private readonly albumRepository: Repository<AlbumEntity>,
-//   ) {}
-//
-//   // async getArtistById(id: string): Promise<Artist | undefined> {
-//   //   return this.artistRepository.findOne(id);
-//   // }
-//   //
-//   // async getAlbumById(id: string): Promise<Album | undefined> {
-//   //   return this.albumRepository.findOne(id);
-//   // }
-//   //
-//   // async getTrackById(id: string): Promise<Track | undefined> {
-//   //   return this.trackRepository.findOne(id);
-//   // }
-// }

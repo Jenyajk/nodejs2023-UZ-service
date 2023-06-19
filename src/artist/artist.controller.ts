@@ -13,22 +13,22 @@ import {
   Put,
 } from '@nestjs/common';
 import { ArtistDto } from './artist.dto';
-import { Artist } from '../models/artist.model';
 import { ArtistService } from './artist.service';
+import { ArtistEntity } from './artist.model';
 
 @Controller('artist')
 export class ArtistController {
-  constructor(private readonly artistsService: ArtistService) {}
+  constructor(private readonly artistService: ArtistService) {}
 
   @Get()
-  getAllArtists(): Artist[] {
-    return this.artistsService.getAllArtists();
+  async getAllArtists(): Promise<ArtistEntity[]> {
+    return await this.artistService.getAllArtists();
   }
 
   @Get(':id')
-  getArtistById(@Param('id') id: string): Artist {
+  async getArtistById(@Param('id') id: string): Promise<ArtistEntity> {
     try {
-      return this.artistsService.getArtistById(id);
+      return await this.artistService.getArtistById(id);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
@@ -44,9 +44,11 @@ export class ArtistController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  createArtist(@Body() createArtistDto: ArtistDto): Artist {
+  async createArtist(
+    @Body() createArtistDto: ArtistDto,
+  ): Promise<ArtistEntity> {
     try {
-      return this.artistsService.createArtist(createArtistDto);
+      return await this.artistService.createArtist(createArtistDto);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -54,12 +56,12 @@ export class ArtistController {
 
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  updateArtist(
+  async updateArtist(
     @Param('id') id: string,
     @Body() updateArtistDto: ArtistDto,
-  ): void {
+  ): Promise<void> {
     try {
-      this.artistsService.updateArtist(id, updateArtistDto);
+      await this.artistService.updateArtist(id, updateArtistDto);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw new BadRequestException(error.message);
@@ -70,12 +72,12 @@ export class ArtistController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteArtist(@Param('id') id: string): void {
-    const artist = this.artistsService.getArtistById(id);
+  async deleteArtist(@Param('id') id: string): Promise<void> {
+    const artist = await this.artistService.getArtistById(id);
     if (!artist) {
       throw new NotFoundException('Artist not found');
     }
 
-    this.artistsService.deleteArtist(id);
+    await this.artistService.deleteArtist(id);
   }
 }

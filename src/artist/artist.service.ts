@@ -5,24 +5,26 @@ import {
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { ArtistDto } from './artist.dto';
-import { Artist } from '../models/artist.model';
 import { validate } from 'uuid';
 import { DatabaseService } from '../database/database.service';
+import { ArtistEntity } from './artist.model';
 
 @Injectable()
 export class ArtistService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  getAllArtists(): Artist[] {
-    return this.databaseService.artists;
+  async getAllArtists(): Promise<ArtistEntity[]> {
+    return await this.databaseService.artistRepository.find();
   }
 
-  getArtistById(id: string): Artist {
+  async getArtistById(id: string): Promise<ArtistEntity> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid artistId');
     }
 
-    const artist = this.databaseService.getArtistById(id);
+    const artist = await this.databaseService.artistRepository.findOne({
+      where: { id },
+    });
     if (!artist) {
       throw new NotFoundException('Artist not found');
     }
@@ -30,59 +32,49 @@ export class ArtistService {
     return artist;
   }
 
-  createArtist(createArtistDto: ArtistDto): Artist {
+  async createArtist(createArtistDto: ArtistDto): Promise<ArtistEntity> {
     if (!createArtistDto.name || createArtistDto.name.trim() === '') {
       throw new BadRequestException('Name is required');
     }
 
-    const newArtist: Artist = {
+    const newArtist: ArtistEntity = {
       id: uuidv4(),
       name: createArtistDto.name,
       grammy: createArtistDto.grammy,
     };
 
-    this.databaseService.artists.push(newArtist);
-    return newArtist;
+    return await this.databaseService.artistRepository.save(newArtist);
   }
 
-  updateArtist(id: string, updateArtistDto: ArtistDto): void {
-    const artist = this.getArtistById(id);
+  async updateArtist(id: string, updateArtistDto: ArtistDto): Promise<void> {
+    const artist = await this.getArtistById(id);
 
-    if (
-      !updateArtistDto.name ||
-      typeof updateArtistDto.name !== 'string' ||
-      updateArtistDto.name.trim() === ''
-    ) {
+    if (!updateArtistDto.name || updateArtistDto.name.trim() === '') {
       throw new BadRequestException('Name is required');
     }
 
     artist.name = updateArtistDto.name;
     artist.grammy = updateArtistDto.grammy;
+
+    await this.databaseService.artistRepository.save(artist);
   }
 
-  deleteArtist(id: string): void {
+  async deleteArtist(id: string): Promise<void> {
     if (!validate(id)) {
-      throw new BadRequestException('Invalid userId');
+      throw new BadRequestException('Invalid artistId');
     }
-    const artistIndex = this.databaseService.artists.findIndex(
-      (artist) => artist.id === id,
+
+    const artist = await this.getArtistById(id);
+
+    await this.databaseService.albumRepository.update(
+      { artistId: id },
+      { artistId: null },
+    );
+    await this.databaseService.trackRepository.update(
+      { artistId: id },
+      { artistId: null },
     );
 
-    if (artistIndex === -1) {
-      throw new NotFoundException('Artist not found');
-    }
-
-    this.databaseService.albums.forEach((album) => {
-      if (album.artistId === id) {
-        album.artistId = null;
-      }
-    });
-    this.databaseService.tracks.forEach((track) => {
-      if (track.artistId === id) {
-        track.artistId = null;
-      }
-    });
-
-    this.databaseService.artists.splice(artistIndex, 1);
+    await this.databaseService.artistRepository.delete(id);
   }
 }

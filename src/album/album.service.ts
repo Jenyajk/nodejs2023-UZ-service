@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { v4 as uuidv4, validate } from 'uuid';
-import { Album } from '../models/album.model';
 import { AlbumDto, UpdateAlbumDto } from './album.dto';
 import { DatabaseService } from '../database/database.service';
 import { AlbumEntity } from './album.model';
@@ -13,67 +12,72 @@ import { AlbumEntity } from './album.model';
 export class AlbumService {
   constructor(private databaseService: DatabaseService) {}
 
-  getAllAlbums(): Album[] {
-    return this.databaseService.albums;
+  async getAllAlbums(): Promise<AlbumEntity[]> {
+    return await this.databaseService.albumRepository.find();
   }
 
-  getAlbumById(id: string): AlbumEntity {
+  async getAlbumById(id: string): Promise<AlbumEntity> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid album ID');
     }
-    return (
-      this.databaseService.albums.find(({ id: albumId }) => albumId === id) ??
-      null
-    );
+
+    const album = await this.databaseService.albumRepository.findOne({
+      where: { id },
+    });
+    if (!album) {
+      throw new NotFoundException('Album not found');
+    }
+
+    return album;
   }
 
-  createAlbum(createAlbumDto: AlbumDto): AlbumEntity {
-    const newAlbum: Album = {
+  async createAlbum(createAlbumDto: AlbumDto): Promise<AlbumEntity> {
+    const newAlbum: AlbumEntity = {
       id: uuidv4(),
       name: createAlbumDto.name,
       year: createAlbumDto.year,
       artistId: createAlbumDto.artistId,
     };
 
-    this.databaseService.albums.push(newAlbum);
-    return newAlbum;
+    return await this.databaseService.albumRepository.save(newAlbum);
   }
 
-  // updateAlbum(id: string, updateAlbumDto: UpdateAlbumDto): AlbumEntity {
-  //   validate(id);
-  //   const album = this.getAlbumById(id);
-  //   album.name = updateAlbumDto.name;
-  //   album.year = updateAlbumDto.year;
-  //   album.artistId = updateAlbumDto.artistId;
-  //   return album;
-  // }
-
-  deleteAlbum(id: string): void {
+  async updateAlbum(
+    id: string,
+    updateAlbumDto: UpdateAlbumDto,
+  ): Promise<AlbumEntity> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid albumId');
     }
 
-    const albumIndex = this.databaseService.albums.findIndex(
-      (album) => album.id === id,
-    );
+    const album = await this.getAlbumById(id);
 
-    if (albumIndex === -1) {
-      throw new NotFoundException('Album not found');
+    album.name = updateAlbumDto.name;
+    album.year = updateAlbumDto.year;
+    album.artistId = updateAlbumDto.artistId;
+
+    return await this.databaseService.albumRepository.save(album);
+  }
+
+  async deleteAlbum(id: string): Promise<void> {
+    if (!validate(id)) {
+      throw new BadRequestException('Invalid albumId');
     }
 
-    this.databaseService.tracks.forEach((track) => {
-      if (track.albumId === id) {
-        track.albumId = null;
-      }
-    });
+    const album = await this.getAlbumById(id);
 
-    this.databaseService.albums.splice(albumIndex, 1);
+    await this.databaseService.trackRepository.update(
+      { albumId: id },
+      { albumId: null },
+    );
+
+    await this.databaseService.albumRepository.delete(id);
   }
-  removeArtistId(id: string) {
-    this.databaseService.albums.forEach((album: Album) => {
-      if (album.artistId === id) {
-        album.artistId = null;
-      }
-    });
+
+  async removeArtistId(id: string): Promise<void> {
+    await this.databaseService.albumRepository.update(
+      { artistId: id },
+      { artistId: null },
+    );
   }
 }

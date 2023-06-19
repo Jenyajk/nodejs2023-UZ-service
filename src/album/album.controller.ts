@@ -13,7 +13,6 @@ import {
   Put,
   ValidationPipe,
 } from '@nestjs/common';
-import { Album } from '../models/album.model';
 import { AlbumDto, UpdateAlbumDto } from './album.dto';
 import { AlbumService } from './album.service';
 import { validate } from 'uuid';
@@ -25,13 +24,13 @@ export class AlbumController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  getAllAlbums(): AlbumEntity[] {
-    return this.albumsService.getAllAlbums();
+  async getAllAlbums(): Promise<AlbumEntity[]> {
+    return await this.albumsService.getAllAlbums();
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  getAlbumById(
+  async getAlbumById(
     @Param(
       'id',
       new ValidationPipe({
@@ -40,50 +39,52 @@ export class AlbumController {
       }),
     )
     id: string,
-  ): AlbumEntity {
-    const album = this.albumsService.getAlbumById(id);
-    if (!album) {
-      throw new NotFoundException('Album not found');
+  ): Promise<AlbumEntity> {
+    try {
+      return await this.albumsService.getAlbumById(id);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
     }
-    return album;
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  createAlbum(@Body() createAlbumDto: AlbumDto): AlbumEntity {
-    return this.albumsService.createAlbum(createAlbumDto);
+  async createAlbum(@Body() createAlbumDto: AlbumDto): Promise<AlbumEntity> {
+    return await this.albumsService.createAlbum(createAlbumDto);
   }
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
-  updateAlbumInfo(
+  async updateAlbum(
     @Body() updateAlbumDto: UpdateAlbumDto,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-  ) {
+  ): Promise<AlbumEntity> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid Id');
     }
-    const album = this.albumsService.getAlbumById(id);
-    if (!album) {
-      throw new NotFoundException('Album not found');
+
+    try {
+      return await this.albumsService.updateAlbum(id, updateAlbumDto);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
     }
-
-    album.name = updateAlbumDto.name;
-    album.year = updateAlbumDto.year;
-    album.artistId = updateAlbumDto.artistId;
-
-    return album;
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  deleteAlbum(@Param('id') id: string): void {
+  async deleteAlbum(@Param('id') id: string): Promise<void> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid albumId');
     }
 
     try {
-      this.albumsService.deleteAlbum(id);
+      await this.albumsService.deleteAlbum(id);
     } catch (error) {
       throw new NotFoundException(error.message);
     }

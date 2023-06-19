@@ -49,7 +49,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  //@HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(204)
   deleteUser(@Param('id') id: string): Promise<void> {
     return this.usersService.deleteUser(id);
   }

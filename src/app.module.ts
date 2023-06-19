@@ -8,9 +8,18 @@ import { AlbumModule } from './album/album.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import * as dotenv from 'dotenv';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserEntity } from './users/user.model';
+import { AlbumEntity } from './album/album.model';
+import { TrackEntity } from './track/track.model';
+import { ArtistEntity } from './artist/artist.model';
+import { FavouritesEntity } from './favorites/favorites.model';
+import { DatabaseService } from './database/database.service';
+import { DatabaseModule } from './database/database.module';
 dotenv.config();
+
 @Module({
   imports: [
+    DatabaseModule,
     UsersModule,
     ArtistModule,
     TrackModule,
@@ -23,11 +32,18 @@ dotenv.config();
       username: process.env.POSTGRES_USER,
       password: String(process.env.POSTGRES_PASSWORD),
       database: process.env.POSTGRES_DB,
-      entities: ['dist/**/*.model{.ts,.js}'],
+      entities: [
+        UserEntity,
+        ArtistEntity,
+        AlbumEntity,
+        TrackEntity,
+        FavouritesEntity,
+      ],
       synchronize: true,
+      migrations: [__dirname + '/migrations/*.ts'],
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, DatabaseService],
 })
 export class AppModule {}

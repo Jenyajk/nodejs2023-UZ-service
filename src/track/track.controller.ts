@@ -23,37 +23,41 @@ export class TrackController {
   constructor(private readonly trackService: TrackService) {}
 
   @Get()
-  getAllTracks(): Track[] {
-    return this.trackService.getAllTracks();
+  async getAllTracks(): Promise<TrackEntity[]> {
+    return await this.trackService.getAllTracks();
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  getTrackById(@Param('id') id: string): TrackEntity {
-    const track = this.trackService.getTrackById(id);
-    if (!track) {
+  async getTrackById(@Param('id') id: string): Promise<TrackEntity> {
+    try {
+      const track = await this.trackService.getTrackById(id);
+      if (!track) {
+        throw new NotFoundException('Track not found');
+      }
+
+      return track;
+    } catch (error) {
       throw new NotFoundException('Track not found');
     }
-
-    return track;
   }
 
   @Post()
-  createTrack(@Body() createTrackDto: TrackDto): Track {
+  async createTrack(@Body() createTrackDto: TrackDto): Promise<TrackEntity> {
     try {
-      return this.trackService.createTrack(createTrackDto);
+      return await this.trackService.createTrack(createTrackDto);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
   @Put(':id')
-  updateTrack(
+  async updateTrack(
     @Param('id') id: string,
     @Body() createTrackDto: TrackDto,
-  ): Track {
+  ): Promise<TrackEntity> {
     try {
-      return this.trackService.updateTrack(id, createTrackDto);
+      return await this.trackService.updateTrack(id, createTrackDto);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
@@ -69,16 +73,16 @@ export class TrackController {
 
   @Delete(':id')
   @HttpCode(204)
-  deleteTrack(@Param('id') id: string): void {
+  async deleteTrack(@Param('id') id: string): Promise<void> {
     if (!validate(id)) {
       throw new BadRequestException('Invalid trackId');
     }
 
-    const trackExists = this.trackService.getTrackById(id);
+    const trackExists = await this.trackService.getTrackById(id);
     if (!trackExists) {
       throw new NotFoundException('Track not found');
     }
 
-    this.trackService.deleteTrack(id);
+    await this.trackService.deleteTrack(id);
   }
 }

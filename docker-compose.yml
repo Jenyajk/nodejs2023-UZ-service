@@ -10,4 +10,15 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql/data
+      - dblogs:/var/log/postgresql
+    networks:
+      - mynetwork
+
+volumes:
+  dbdata:
+  dblogs:
+  appdata:
+
+networks:
+  mynetwork:

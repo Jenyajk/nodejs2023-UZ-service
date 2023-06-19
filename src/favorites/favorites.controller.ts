@@ -16,15 +16,15 @@ export class FavoritesController {
   constructor(private readonly favoritesService: FavoritesService) {}
 
   @Get()
-  getAllFavorites(): FavoritesResponse {
-    return this.favoritesService.getAllFavorites();
+  async getAllFavorites(): Promise<FavoritesResponse> {
+    return await this.favoritesService.getAllFavorites();
   }
 
   @Post('track/:id')
   @HttpCode(201)
-  addTrackToFavorites(@Param('id') trackId: string): string {
+  async addTrackToFavorites(@Param('id') trackId: string): Promise<string> {
     try {
-      return this.favoritesService.addTrackToFavorites(trackId);
+      return await this.favoritesService.addTrackToFavorites(trackId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
@@ -38,9 +38,11 @@ export class FavoritesController {
 
   @Delete('track/:id')
   @HttpCode(204)
-  removeTrackFromFavorites(@Param('id') trackId: string): string {
+  async removeTrackFromFavorites(
+    @Param('id') trackId: string,
+  ): Promise<string> {
     try {
-      return this.favoritesService.removeTrackFromFavorites(trackId);
+      return await this.favoritesService.removeTrackFromFavorites(trackId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
@@ -54,9 +56,9 @@ export class FavoritesController {
 
   @Post('album/:id')
   @HttpCode(201)
-  addAlbumToFavorites(@Param('id') albumId: string): string {
+  async addAlbumToFavorites(@Param('id') albumId: string): Promise<string> {
     try {
-      return this.favoritesService.addAlbumToFavorites(albumId);
+      return await this.favoritesService.addAlbumToFavorites(albumId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
@@ -70,9 +72,11 @@ export class FavoritesController {
 
   @Delete('album/:id')
   @HttpCode(204)
-  removeAlbumFromFavorites(@Param('id') albumId: string): string {
+  async removeAlbumFromFavorites(
+    @Param('id') albumId: string,
+  ): Promise<string> {
     try {
-      return this.favoritesService.removeAlbumFromFavorites(albumId);
+      return await this.favoritesService.removeAlbumFromFavorites(albumId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
@@ -86,9 +90,9 @@ export class FavoritesController {
 
   @Post('artist/:id')
   @HttpCode(201)
-  addArtistToFavorites(@Param('id') artistId: string): string {
+  async addArtistToFavorites(@Param('id') artistId: string): Promise<string> {
     try {
-      return this.favoritesService.addArtistToFavorites(artistId);
+      return await this.favoritesService.addArtistToFavorites(artistId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
@@ -102,9 +106,11 @@ export class FavoritesController {
 
   @Delete('artist/:id')
   @HttpCode(204)
-  removeArtistFromFavorites(@Param('id') artistId: string): string {
+  async removeArtistFromFavorites(
+    @Param('id') artistId: string,
+  ): Promise<string> {
     try {
-      return this.favoritesService.removeArtistFromFavorites(artistId);
+      return await this.favoritesService.removeArtistFromFavorites(artistId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);

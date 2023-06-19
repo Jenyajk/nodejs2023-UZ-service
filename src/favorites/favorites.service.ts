@@ -5,28 +5,30 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Artist } from '../models/artist.model';
-import { Album } from '../models/album.model';
-import { Track } from '../models/track.model';
 import { FavoritesResponse } from './favorites.dto';
 import { DatabaseService } from '../database/database.service';
+import { TrackEntity } from '../track/track.model';
+import { AlbumEntity } from '../album/album.model';
+import { ArtistEntity } from '../artist/artist.model';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class FavoritesService {
   constructor(private readonly databaseService: DatabaseService) {}
-
-  addTrackToFavorites(trackId: string): string {
+  async addTrackToFavorites(trackId: string): Promise<string> {
     if (!trackId) {
       throw new BadRequestException('Track ID is required');
     }
 
-    const track = this.databaseService.getTrackById(trackId);
+    const track = await this.databaseService.trackRepository.findOne({
+      where: { id: trackId },
+    });
 
     if (!track) {
-      throw new BadRequestException('Track not found');
+      throw new NotFoundException('Track not found');
     }
 
-    this.databaseService.favorites.tracks.push(trackId);
+    this.databaseService.favorites.tracks.push(track);
     return 'Track added to favorites';
   }
 
@@ -36,7 +38,7 @@ export class FavoritesService {
     }
 
     const index = this.databaseService.favorites.tracks.findIndex(
-      (id) => id === trackId,
+      (track) => track.id === trackId,
     );
 
     if (index === -1) {
@@ -47,18 +49,20 @@ export class FavoritesService {
     return 'Track removed from favorites';
   }
 
-  addAlbumToFavorites(albumId: string): string {
+  async addAlbumToFavorites(albumId: string): Promise<string> {
     if (!albumId) {
       throw new BadRequestException('Album ID is required');
     }
 
-    const album = this.databaseService.getAlbumById(albumId);
+    const album = await this.databaseService.albumRepository.findOne({
+      where: { id: albumId },
+    });
 
     if (!album) {
-      throw new BadRequestException('Track not found');
+      throw new NotFoundException('Album not found');
     }
 
-    this.databaseService.favorites.albums.push(albumId);
+    this.databaseService.favorites.albums.push(album);
     return 'Album added to favorites';
   }
 
@@ -68,7 +72,7 @@ export class FavoritesService {
     }
 
     const index = this.databaseService.favorites.albums.findIndex(
-      (id) => id === albumId,
+      (album) => album.id === albumId,
     );
 
     if (index === -1) {
@@ -79,18 +83,20 @@ export class FavoritesService {
     return 'Album removed from favorites';
   }
 
-  addArtistToFavorites(artistId: string): string {
+  async addArtistToFavorites(artistId: string): Promise<string> {
     if (!artistId) {
       throw new BadRequestException('Artist ID is required');
     }
 
-    const artist = this.databaseService.getArtistById(artistId);
+    const artist = await this.databaseService.artistRepository.findOne({
+      where: { id: artistId },
+    });
 
     if (!artist) {
-      throw new BadRequestException('Track not found');
+      throw new NotFoundException('Artist not found');
     }
 
-    this.databaseService.favorites.artists.push(artistId);
+    this.databaseService.favorites.artists.push(artist);
     return 'Artist added to favorites';
   }
 
@@ -100,7 +106,7 @@ export class FavoritesService {
     }
 
     const index = this.databaseService.favorites.artists.findIndex(
-      (id) => id === artistId,
+      (artist) => artist.id === artistId,
     );
 
     if (index === -1) {
@@ -111,10 +117,12 @@ export class FavoritesService {
     return 'Artist removed from favorites';
   }
 
-  getFavoriteArtists(): Artist[] {
-    const favoriteArtists: Artist[] = [];
+  async getFavoriteArtists(): Promise<ArtistEntity[]> {
+    const favoriteArtists: ArtistEntity[] = [];
     for (const artistId of this.databaseService.favorites.artists) {
-      const artist = this.databaseService.getArtistById(artistId);
+      const artist = await this.databaseService.artistRepository.findOne({
+        where: { id: Like(String(artistId)) },
+      });
       if (artist) {
         favoriteArtists.push(artist);
       }
@@ -122,10 +130,12 @@ export class FavoritesService {
     return favoriteArtists;
   }
 
-  getFavoriteAlbums(): Album[] {
-    const favoriteAlbums: Album[] = [];
+  async getFavoriteAlbums(): Promise<AlbumEntity[]> {
+    const favoriteAlbums: AlbumEntity[] = [];
     for (const albumId of this.databaseService.favorites.albums) {
-      const album = this.databaseService.getAlbumById(albumId);
+      const album = await this.databaseService.albumRepository.findOne({
+        where: { id: Like(String(albumId)) },
+      });
       if (album) {
         favoriteAlbums.push(album);
       }
@@ -133,10 +143,12 @@ export class FavoritesService {
     return favoriteAlbums;
   }
 
-  getFavoriteTracks(): Track[] {
-    const favoriteTracks: Track[] = [];
+  async getFavoriteTracks(): Promise<TrackEntity[]> {
+    const favoriteTracks: TrackEntity[] = [];
     for (const trackId of this.databaseService.favorites.tracks) {
-      const track = this.databaseService.getTrackById(trackId);
+      const track = await this.databaseService.trackRepository.findOne({
+        where: { id: Like(String(trackId)) },
+      });
       if (track) {
         favoriteTracks.push(track);
       }
@@ -144,10 +156,10 @@ export class FavoritesService {
     return favoriteTracks;
   }
 
-  getAllFavorites(): FavoritesResponse {
-    const artists = this.getFavoriteArtists();
-    const albums = this.getFavoriteAlbums();
-    const tracks = this.getFavoriteTracks();
+  async getAllFavorites(): Promise<FavoritesResponse> {
+    const artists = await this.getFavoriteArtists();
+    const albums = await this.getFavoriteAlbums();
+    const tracks = await this.getFavoriteTracks();
 
     return {
       artists,
@@ -155,7 +167,8 @@ export class FavoritesService {
       tracks,
     };
   }
-  remove(id: string, entityType: string, flag: boolean) {
+
+  private remove(id: string, entityType: string, flag: boolean) {
     const entityIdx = this.databaseService.favorites[
       `${entityType}s`
     ].findIndex((entityId) => entityId === id);
@@ -171,27 +184,16 @@ export class FavoritesService {
     }
     return { message: `${entityType.toUpperCase()} successfully deleted` };
   }
-  // addAlbum(id: string) {
-  //   return this.addAlbumMain(id, 'album');
-  // }
-  //
-  // addTrack(id: string) {
-  //   return this.addTrackMain(id, 'track');
-  // }
-  //
-  // addArtist(id: string) {
-  //   return this.addArtistMain(id, 'artist');
-  // }
 
-  removeAlbum(id: string, flag = false) {
+  async removeAlbum(id: string, flag = false) {
     return this.remove(id, 'album', flag);
   }
 
-  removeTrack(id: string, flag = false) {
+  async removeTrack(id: string, flag = false) {
     return this.remove(id, 'track', flag);
   }
 
-  removeArtist(id: string, flag = false) {
+  async removeArtist(id: string, flag = false) {
     return this.remove(id, 'artist', flag);
   }
 }

@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { User, UserResponse } from '../models/user.model';
+
 import { validate } from 'uuid';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
@@ -44,8 +44,8 @@ export class UsersService {
     newUser.login = createUserDto.login;
     newUser.password = createUserDto.password;
     newUser.version = 1;
-    newUser.createdAt = Date.now();
-    newUser.updatedAt = Date.now();
+    newUser.createdAt = Number(Date.now());
+    newUser.updatedAt = Number(Date.now());
 
     return this.userRepository.save(newUser);
   }
@@ -68,12 +68,12 @@ export class UsersService {
     }
 
     if (user.password !== updatePasswordDto.oldPassword) {
-      throw new ForbiddenException('Invalid old password');
+      throw new BadRequestException('Invalid old password');
     }
 
     user.password = updatePasswordDto.newPassword;
     user.version += 1;
-    user.updatedAt = Date.now();
+    user.updatedAt = Number(Date.now());
 
     const updatedUser = await this.userRepository.save(user);
     if (!updatedUser) {
@@ -104,9 +104,4 @@ export class UsersService {
       );
     }
   }
-
-  // private mapUserToResponse(user: User): UserResponse {
-  //   const { id, login, version, createdAt, updatedAt } = user;
-  //   return { id, login, version, createdAt, updatedAt };
-  // }
 }
