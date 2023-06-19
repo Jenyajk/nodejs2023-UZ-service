@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   database:
     image: postgres:latest
@@ -15,10 +16,21 @@ services:
     networks:
       - mynetwork
 
+  service-1:
+    build:
+      context: ./
+    restart: always
+    volumes:
+      - ./src:/app/src
+    ports:
+      - '3000:3000'
+    networks:
+      - mynetwork
+
 volumes:
   dbdata:
   dblogs:
-  appdata:
 
 networks:
   mynetwork:
+    driver: bridge
