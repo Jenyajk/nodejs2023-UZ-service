@@ -6,15 +6,15 @@ import { ArtistModule } from './artist/artist.module';
 import { TrackModule } from './track/track.module';
 import { AlbumModule } from './album/album.module';
 import { FavoritesModule } from './favorites/favorites.module';
-import * as dotenv from 'dotenv';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from './users/user.model';
-import { AlbumEntity } from './album/album.model';
-import { TrackEntity } from './track/track.model';
-import { ArtistEntity } from './artist/artist.model';
-import { FavouritesEntity } from './favorites/favorites.model';
+import { AlbumEntity } from './album/album.entity';
+import { ArtistEntity } from './artist/artist.entity';
+import { FavouritesEntity } from './favorites/favorites.entity';
 import { DatabaseService } from './database/database.service';
 import { DatabaseModule } from './database/database.module';
+import * as dotenv from 'dotenv';
+import { UserEntity } from './users/user.entity';
+import { TrackEntity } from './track/track.entity';
 dotenv.config();
 
 @Module({
@@ -40,7 +40,7 @@ dotenv.config();
         FavouritesEntity,
       ],
       synchronize: true,
-      migrations: [__dirname + '/migrations/*.ts'],
+      migrations: ['src/migrations/*.ts'],
     }),
   ],
   controllers: [AppController],

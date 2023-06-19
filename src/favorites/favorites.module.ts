@@ -3,10 +3,10 @@ import { FavoritesService } from './favorites.service';
 import { FavoritesController } from './favorites.controller';
 import { DatabaseModule } from '../database/database.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TrackEntity } from '../track/track.model';
-import { ArtistEntity } from '../artist/artist.model';
-import { AlbumEntity } from '../album/album.model';
-import { FavouritesEntity } from './favorites.model';
+import { TrackEntity } from '../track/track.entity';
+import { ArtistEntity } from '../artist/artist.entity';
+import { AlbumEntity } from '../album/album.entity';
+import { FavouritesEntity } from './favorites.entity';
 
 @Module({
   providers: [FavoritesService],

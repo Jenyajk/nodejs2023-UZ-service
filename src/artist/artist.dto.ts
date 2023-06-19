@@ -5,6 +5,7 @@ export class ArtistDto {
   name: string;
 
   @IsBoolean()
+  @IsNotEmpty()
   grammy: boolean;
 }
 

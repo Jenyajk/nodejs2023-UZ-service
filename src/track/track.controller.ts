@@ -11,11 +11,12 @@ import {
   Body,
   Put,
   InternalServerErrorException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { TrackDto } from './track.dto';
 import { TrackService } from './track.service';
 import { validate } from 'uuid';
-import { TrackEntity } from './track.model';
+import { TrackEntity } from './track.entity';
 
 @Controller('track')
 export class TrackController {
@@ -28,17 +29,16 @@ export class TrackController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  async getTrackById(@Param('id') id: string): Promise<TrackEntity> {
-    try {
-      const track = await this.trackService.getTrackById(id);
-      if (!track) {
-        throw new NotFoundException('Track not found');
-      }
-
-      return track;
-    } catch (error) {
+  async getTrackById(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    validate(id);
+    const track = await this.trackService.getTrackById(id);
+    if (!track) {
       throw new NotFoundException('Track not found');
     }
+
+    return track;
   }
 
   @Post()

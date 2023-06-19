@@ -8,9 +8,9 @@ import { validate } from 'uuid';
 import { v4 as uuid4 } from 'uuid';
 import { CreateUserDto } from './create-user.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { UserEntity } from './user.model';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserEntity } from './user.entity';
 
 @Injectable()
 export class UsersService {

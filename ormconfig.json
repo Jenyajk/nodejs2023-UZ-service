@@ -5,7 +5,7 @@
   "username": "${POSTGRES_USER}",
   "password": "${POSTGRES_PASSWORD}",
   "database": "${POSTGRES_DB}",
-  "entities": ["src/entities/*.ts"],
+  "entities": ["src/*entities.ts"],
   "migrations": ["src/migrations/*.ts"],
   "cli": {
     "migrationsDir": "src/migrations"

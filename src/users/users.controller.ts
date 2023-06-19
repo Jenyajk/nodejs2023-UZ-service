@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
-import { UserEntity } from './user.model';
+import { UserEntity } from './user.entity';
 import { validate } from 'uuid';
 
 @Controller('user')

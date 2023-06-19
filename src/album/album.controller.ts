@@ -16,7 +16,7 @@ import {
 import { AlbumDto, UpdateAlbumDto } from './album.dto';
 import { AlbumService } from './album.service';
 import { validate } from 'uuid';
-import { AlbumEntity } from './album.model';
+import { AlbumEntity } from './album.entity';
 
 @Controller('album')
 export class AlbumController {

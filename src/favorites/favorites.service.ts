@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { FavoritesResponse } from './favorites.dto';
 import { DatabaseService } from '../database/database.service';
-import { TrackEntity } from '../track/track.model';
-import { AlbumEntity } from '../album/album.model';
-import { ArtistEntity } from '../artist/artist.model';
+import { TrackEntity } from '../track/track.entity';
+import { AlbumEntity } from '../album/album.entity';
+import { ArtistEntity } from '../artist/artist.entity';
 import { Like } from 'typeorm';
 
 @Injectable()
@@ -119,12 +119,15 @@ export class FavoritesService {
 
   async getFavoriteArtists(): Promise<ArtistEntity[]> {
     const favoriteArtists: ArtistEntity[] = [];
-    for (const artistId of this.databaseService.favorites.artists) {
-      const artist = await this.databaseService.artistRepository.findOne({
-        where: { id: Like(String(artistId)) },
-      });
-      if (artist) {
-        favoriteArtists.push(artist);
+    const artists = this.databaseService.favorites.artists;
+    if (artists) {
+      for (const artistId of artists) {
+        const artist = await this.databaseService.artistRepository.findOne({
+          where: { id: Like(String(artistId)) },
+        });
+        if (artist) {
+          favoriteArtists.push(artist);
+        }
       }
     }
     return favoriteArtists;

@@ -4,11 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TrackDto } from './track.dto';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuid4 } from 'uuid';
 import { validate } from 'uuid';
-import { TrackEntity } from './track.model';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { TrackEntity } from './track.entity';
 
 @Injectable()
 export class TrackService {
@@ -21,19 +21,9 @@ export class TrackService {
     return await this.trackRepository.find();
   }
 
-  async getTrackById(id: string): Promise<TrackEntity> {
-    if (!validate(id)) {
-      throw new BadRequestException('Invalid trackId');
-    }
-
-    const track = await this.trackRepository.findOne({
-      where: { id },
-    });
-    if (!track) {
-      throw new NotFoundException('Track not found');
-    }
-
-    return track;
+  async getTrackById(id: string): Promise<TrackEntity | null> {
+    const track = await this.trackRepository.findOne({ where: { id } });
+    return track ?? null;
   }
 
   async createTrack(createTrackDto: TrackDto): Promise<TrackEntity> {
@@ -42,7 +32,7 @@ export class TrackService {
     }
 
     const newTrack: TrackEntity = {
-      id: uuidv4(),
+      id: uuid4(),
       name: createTrackDto.name,
       artistId: createTrackDto.artistId,
       albumId: createTrackDto.albumId,
@@ -95,10 +85,18 @@ export class TrackService {
   }
 
   async removeArtistId(id: string): Promise<void> {
-    await this.trackRepository.update({ artistId: id }, { artistId: null });
+    const tracks = await this.trackRepository.find({ where: { artistId: id } });
+    for (const track of tracks) {
+      track.artistId = null;
+      await this.trackRepository.save(track);
+    }
   }
 
   async removeAlbumId(id: string): Promise<void> {
-    await this.trackRepository.update({ albumId: id }, { albumId: null });
+    const tracks = await this.trackRepository.find({ where: { albumId: id } });
+    for (const track of tracks) {
+      track.albumId = null;
+      await this.trackRepository.save(track);
+    }
   }
 }

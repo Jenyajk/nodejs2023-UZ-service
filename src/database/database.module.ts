@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { DatabaseService } from './database.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from '../users/user.model';
-import { TrackEntity } from '../track/track.model';
-import { ArtistEntity } from '../artist/artist.model';
-import { AlbumEntity } from '../album/album.model';
-import { FavouritesEntity } from '../favorites/favorites.model';
+import { UserEntity } from '../users/user.entity';
+import { TrackEntity } from '../track/track.entity';
+import { ArtistEntity } from '../artist/artist.entity';
+import { AlbumEntity } from '../album/album.entity';
+import { FavouritesEntity } from '../favorites/favorites.entity';
 
 @Module({
   providers: [DatabaseService],

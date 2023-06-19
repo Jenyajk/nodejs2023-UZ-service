@@ -5,12 +5,12 @@ export class AlbumEntity {
   @PrimaryColumn()
   readonly id: string;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   year: number;
 
-  @Column()
+  @Column({ nullable: true })
   artistId: string | null;
 }

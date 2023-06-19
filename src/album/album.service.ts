@@ -6,7 +6,7 @@ import {
 import { v4 as uuidv4, validate } from 'uuid';
 import { AlbumDto, UpdateAlbumDto } from './album.dto';
 import { DatabaseService } from '../database/database.service';
-import { AlbumEntity } from './album.model';
+import { AlbumEntity } from './album.entity';
 
 @Injectable()
 export class AlbumService {
@@ -38,7 +38,6 @@ export class AlbumService {
       year: createAlbumDto.year,
       artistId: createAlbumDto.artistId,
     };
-
     return await this.databaseService.albumRepository.save(newAlbum);
   }
 
@@ -70,14 +69,10 @@ export class AlbumService {
       { albumId: id },
       { albumId: null },
     );
-
-    await this.databaseService.albumRepository.delete(id);
-  }
-
-  async removeArtistId(id: string): Promise<void> {
     await this.databaseService.albumRepository.update(
       { artistId: id },
       { artistId: null },
     );
+    await this.databaseService.albumRepository.delete(id);
   }
 }

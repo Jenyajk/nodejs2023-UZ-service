@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ArtistDto } from './artist.dto';
 import { ArtistService } from './artist.service';
-import { ArtistEntity } from './artist.model';
+import { ArtistEntity } from './artist.entity';
 
 @Controller('artist')
 export class ArtistController {
@@ -55,13 +55,13 @@ export class ArtistController {
   }
 
   @Put(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async updateArtist(
+  @HttpCode(HttpStatus.OK)
+  async updateArtistEndpoint(
     @Param('id') id: string,
     @Body() updateArtistDto: ArtistDto,
-  ): Promise<void> {
+  ): Promise<ArtistEntity> {
     try {
-      await this.artistService.updateArtist(id, updateArtistDto);
+      return await this.artistService.updateArtist(id, updateArtistDto);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw new BadRequestException(error.message);
@@ -79,5 +79,6 @@ export class ArtistController {
     }
 
     await this.artistService.deleteArtist(id);
+    return;
   }
 }

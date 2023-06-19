@@ -6,7 +6,7 @@ import { AlbumModule } from '../album/album.module';
 import { TrackModule } from '../track/track.module';
 import { FavoritesModule } from '../favorites/favorites.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ArtistEntity } from './artist.model';
+import { ArtistEntity } from './artist.entity';
 
 @Module({
   controllers: [ArtistController],
