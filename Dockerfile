@@ -1,6 +1,5 @@
 FROM node:18-alpine
 RUN apk add --no-cache postgresql-client
-RUN yarn global add @nestjs/cli
 WORKDIR /app
 COPY package*.json ./
 RUN yarn install --production
