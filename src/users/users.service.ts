@@ -1,13 +1,12 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 
 import { validate } from 'uuid';
-import { v4 as uuidv4 } from 'uuid';
-import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
+import { v4 as uuid4 } from 'uuid';
+import { CreateUserDto } from './create-user.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { UserEntity } from './user.model';
 import { Repository } from 'typeorm';
@@ -39,41 +38,23 @@ export class UsersService {
     if (!createUserDto.login || !createUserDto.password) {
       throw new BadRequestException('Missing login or password');
     }
-    const newUser = this.userRepository.create();
-    newUser.id = uuidv4();
+    const newUser = await this.userRepository.create();
+    newUser.id = uuid4();
     newUser.login = createUserDto.login;
     newUser.password = createUserDto.password;
     newUser.version = 1;
     newUser.createdAt = Number(Date.now());
     newUser.updatedAt = Number(Date.now());
 
-    return this.userRepository.save(newUser);
+    return await this.userRepository.save(newUser);
   }
 
-  async updateUser(
-    id: string,
-    updatePasswordDto: UpdatePasswordDto,
-  ): Promise<UserEntity> {
-    if (!validate(id)) {
-      throw new BadRequestException('Invalid userId');
-    }
-
+  async updateUser(id, data) {
     const user = await this.getUserById(id);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (updatePasswordDto.newPassword === updatePasswordDto.oldPassword) {
-      throw new ForbiddenException('You cannot set the same password');
-    }
-
-    if (user.password !== updatePasswordDto.oldPassword) {
-      throw new BadRequestException('Invalid old password');
-    }
-
-    user.password = updatePasswordDto.newPassword;
-    user.version += 1;
+    user.password = data.newPassword;
     user.updatedAt = Number(Date.now());
+    user.createdAt = Number(user.createdAt);
+    user.version += 1;
 
     const updatedUser = await this.userRepository.save(user);
     if (!updatedUser) {
@@ -86,22 +67,10 @@ export class UsersService {
     return updatedUser;
   }
 
-  async deleteUser(id: string): Promise<void> {
+  async deleteUser(id: string) {
     if (!validate(id)) {
       throw new BadRequestException('Invalid userId');
     }
-
-    const user = await this.getUserById(id);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const deletionResult = await this.userRepository.delete(user.id);
-    if (!deletionResult.affected) {
-      throw new HttpException(
-        'Failed to delete user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return await this.userRepository.delete(id);
   }
 }

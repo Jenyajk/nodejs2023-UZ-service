@@ -12,10 +12,13 @@ import {
   ClassSerializerInterceptor,
   ParseUUIDPipe,
   BadRequestException,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
 import { UserEntity } from './user.model';
+import { validate } from 'uuid';
 
 @Controller('user')
 export class UsersController {
@@ -41,16 +44,42 @@ export class UsersController {
   @Put(':id')
   @UseInterceptors(ClassSerializerInterceptor)
   @HttpCode(HttpStatus.OK)
-  updateUserPassword(
+  async updateUser(
     @Body() updatePasswordDto: UpdatePasswordDto,
-    @Param('id') id: string,
-  ): Promise<UserEntity> {
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    validate(id);
+    if (
+      !updatePasswordDto ||
+      !updatePasswordDto.oldPassword ||
+      !updatePasswordDto.newPassword
+    ) {
+      throw new BadRequestException('Password and old password are required');
+    }
+    const user = await this.usersService.getUserById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (updatePasswordDto.newPassword === updatePasswordDto.oldPassword)
+      throw new ForbiddenException('You can not write the same password');
+    if (user.password !== updatePasswordDto.oldPassword) {
+      throw new ForbiddenException('Invalid old password');
+    }
+
     return this.usersService.updateUser(id, updatePasswordDto);
   }
 
   @Delete(':id')
-  @HttpCode(204)
-  deleteUser(@Param('id') id: string): Promise<void> {
+  @UseInterceptors(ClassSerializerInterceptor)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteUser(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    validate(id);
+    const user = await this.usersService.getUserById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     return this.usersService.deleteUser(id);
   }
 }
