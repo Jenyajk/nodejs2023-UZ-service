@@ -13,22 +13,23 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { TrackDto } from './track.dto';
-import { Track } from '../models/track.model';
 import { TrackService } from './track.service';
 import { validate } from 'uuid';
+import { TrackEntity } from './track.entity';
 
 @Controller('track')
 export class TrackController {
   constructor(private readonly trackService: TrackService) {}
 
   @Get()
-  getAllTracks(): Track[] {
+  @HttpCode(HttpStatus.OK)
+  getAllTracks(): TrackEntity[] {
     return this.trackService.getAllTracks();
   }
 
   @Get(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  getTrackById(@Param('id') id: string): Track {
+  @HttpCode(HttpStatus.OK)
+  getTrackById(@Param('id') id: string): TrackEntity {
     const track = this.trackService.getTrackById(id);
     if (!track) {
       throw new NotFoundException('Track not found');
@@ -38,7 +39,7 @@ export class TrackController {
   }
 
   @Post()
-  createTrack(@Body() createTrackDto: TrackDto): Track {
+  createTrack(@Body() createTrackDto: TrackDto): TrackEntity {
     try {
       return this.trackService.createTrack(createTrackDto);
     } catch (error) {
@@ -47,10 +48,7 @@ export class TrackController {
   }
 
   @Put(':id')
-  updateTrack(
-    @Param('id') id: string,
-    @Body() createTrackDto: TrackDto,
-  ): Track {
+  updateTrack(@Param('id') id: string, @Body() createTrackDto: TrackDto) {
     try {
       return this.trackService.updateTrack(id, createTrackDto);
     } catch (error) {

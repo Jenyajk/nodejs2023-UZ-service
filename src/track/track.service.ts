@@ -2,14 +2,13 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  HttpStatus,
-  HttpCode,
 } from '@nestjs/common';
 import { Track } from '../models/track.model';
 import { TrackDto } from './track.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { validate } from 'uuid';
 import { DatabaseService } from '../database/database.service';
+import { TrackEntity } from './track.entity';
 
 @Injectable()
 export class TrackService {
@@ -23,8 +22,10 @@ export class TrackService {
       throw new BadRequestException('Invalid trackId');
     }
 
-    const track = this.databaseService.tracks.find((t) => t.id === id);
-    return track || undefined;
+    const track = this.databaseService.tracks.find(
+      ({ id: userId }) => userId === id,
+    );
+    return track ?? null;
   }
 
   createTrack(createTrackDto: TrackDto): Track {
@@ -43,7 +44,7 @@ export class TrackService {
     this.databaseService.tracks.push(newTrack);
     return newTrack;
   }
-  updateTrack(id: string, createTrackDto: TrackDto): Track {
+  updateTrack(id: string, createTrackDto: TrackDto): TrackEntity {
     if (!validate(id)) {
       throw new BadRequestException('Invalid trackId');
     }
