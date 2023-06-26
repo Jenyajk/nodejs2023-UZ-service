@@ -5,24 +5,28 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { User, UserResponse } from '../models/user.model';
+import { User } from '../models/user.model';
 import { v4 as uuidv4 } from 'uuid';
 import { validate } from 'uuid';
-import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
+import { CreateUserDto } from './create-user.dto';
 import { DatabaseService } from '../database/database.service';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
+import { UserEntity } from './user.entity';
+import * as bcrypt from 'bcrypt';
+import { compare } from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  getAllUsers(): UserResponse[] {
-    return this.databaseService.users.map((user) =>
-      this.mapUserToResponse(user),
-    );
+  getAllUsers(): UserEntity[] {
+    return this.databaseService.users;
+  }
+  getUserByLogin(id: string): UserEntity | undefined {
+    return this.databaseService.users.find((user: User) => user.id === id);
   }
 
-  getUserById(id: string): UserResponse {
+  getUserById(id: string): UserEntity | undefined {
     if (!validate(id)) {
       throw new BadRequestException('Invalid userId');
     }
@@ -30,56 +34,66 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return this.mapUserToResponse(user);
+    return user;
   }
 
-  createUser(createUserDto: CreateUserDto): UserResponse {
-    if (!createUserDto.login || !createUserDto.password) {
-      throw new BadRequestException('Missing login or password');
-    }
+  async createUser({ login, password }: CreateUserDto) {
+    const hash = await this.hashPassword(password);
+    if (!hash) throw new Error();
 
-    const newUser: User = {
+    const newUser = new UserEntity({
       id: uuidv4(),
-      login: createUserDto.login,
-      password: createUserDto.password,
+      login: login,
+      password: hash,
       version: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-    };
+    });
 
     this.databaseService.users.push(newUser);
-    return this.mapUserToResponse(newUser);
+    return newUser;
   }
 
-  @HttpCode(HttpStatus.OK)
-  updateUser(id: string, updatePasswordDto: UpdatePasswordDto): UserResponse {
+  async updateUser(id: string, { oldPassword, newPassword }) {
     if (!validate(id)) {
       throw new BadRequestException('Invalid userId');
     }
 
-    const user = this.getUserById(id) as User;
+    const user = await this.getUserById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    if (updatePasswordDto.newPassword === updatePasswordDto.oldPassword)
+    const match = await compare(oldPassword, user.password);
+    if (!match) throw new ForbiddenException('Old password is wrong');
+    if (oldPassword === newPassword)
       throw new ForbiddenException('You can not write the same password');
-    if (user.password !== updatePasswordDto.oldPassword) {
-      throw new ForbiddenException('Invalid old password');
-    }
 
-    user.password = updatePasswordDto.newPassword;
+    user.password = await this.hashPassword(newPassword);
     user.version += 1;
     user.updatedAt = Date.now();
+    return user;
+  }
+  private async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
+  }
 
+  async validateUser({ login, password }: CreateUserDto) {
+    const user = await this.databaseService.users.find(
+      (user: User) => user.login === login,
+    );
+    if (!user)
+      throw new ForbiddenException({
+        message: `User with login: ${login} is not exist`,
+      });
+    const isCorrectPassword = await bcrypt.compare(password, user.password);
+    if (!isCorrectPassword)
+      throw new ForbiddenException({
+        message: `User password: ${password} is incorrect`,
+      });
     return user;
   }
 
   deleteUser(id: string): void {
-    if (!validate(id)) {
-      throw new BadRequestException('Invalid userId');
-    }
-
     const userIndex = this.databaseService.users.findIndex(
       (user) => user.id === id,
     );
@@ -87,14 +101,6 @@ export class UsersService {
     if (userIndex === -1) {
       throw new NotFoundException('User not found');
     }
-
     this.databaseService.users.splice(userIndex, 1);
-
-    throw new HttpException(null, HttpStatus.NO_CONTENT);
-  }
-
-  private mapUserToResponse(user: User): UserResponse {
-    const { id, login, version, createdAt, updatedAt } = user;
-    return { id, login, version, createdAt, updatedAt };
   }
 }

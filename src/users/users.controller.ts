@@ -8,41 +8,75 @@ import {
   Delete,
   HttpStatus,
   HttpCode,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+  ParseUUIDPipe,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
-import { UserResponse } from '../models/user.model';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdatePasswordDto } from './create-user.dto';
+import { UserEntity } from './user.entity';
+import { validate } from 'uuid';
 
 @Controller('user')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  getAllUsers(): UserResponse[] {
+  @UseInterceptors(ClassSerializerInterceptor)
+  @HttpCode(HttpStatus.OK)
+  getAllUsers(): UserEntity[] {
     return this.usersService.getAllUsers();
   }
 
   @Get(':id')
-  getUserById(@Param('id') id: string): UserResponse {
-    return this.usersService.getUserById(id);
+  @UseInterceptors(ClassSerializerInterceptor)
+  @HttpCode(HttpStatus.OK)
+  getUserById(@Param('id') id: string): UserEntity {
+    const user = this.usersService.getUserById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   @Post()
-  createUser(@Body() createUserDto: CreateUserDto): UserResponse {
+  @UseInterceptors(ClassSerializerInterceptor)
+  @HttpCode(HttpStatus.CREATED)
+  createUser(@Body() createUserDto: CreateUserDto) {
+    if (!createUserDto || !createUserDto.login || !createUserDto.password) {
+      throw new BadRequestException('Login and password are required');
+    }
     return this.usersService.createUser(createUserDto);
   }
 
   @Put(':id')
+  @UseInterceptors(ClassSerializerInterceptor)
   @HttpCode(HttpStatus.OK)
   updateUser(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
-  ): UserResponse {
+  ) {
+    if (
+      !updatePasswordDto ||
+      !updatePasswordDto.oldPassword ||
+      !updatePasswordDto.newPassword
+    ) {
+      throw new BadRequestException('Password and old password are required');
+    }
     return this.usersService.updateUser(id, updatePasswordDto);
   }
 
   @Delete(':id')
-  deleteUser(@Param('id') id: string): void {
+  @UseInterceptors(ClassSerializerInterceptor)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteUser(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    validate(id);
+    const user = this.usersService.getUserById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     this.usersService.deleteUser(id);
   }
 }
