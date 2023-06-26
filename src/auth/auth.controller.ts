@@ -1,14 +1,23 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/create-user.dto';
 import { Token } from './token';
 import { ValidationPipe } from './pipe/validation.pipe';
-
+import { Public } from './public.decorator';
+@Public()
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-  @Public()
-  @UseInterceptors(ClassSerializerInterceptor)
+
   @HttpCode(HttpStatus.CREATED)
   @Post('signup')
   async signUp(@Body() createUserDto: CreateUserDto) {
