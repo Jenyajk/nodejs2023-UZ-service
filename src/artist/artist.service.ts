@@ -8,16 +8,17 @@ import { ArtistDto } from './artist.dto';
 import { Artist } from '../models/artist.model';
 import { validate } from 'uuid';
 import { DatabaseService } from '../database/database.service';
+import { ArtistEntity } from './artist.entity';
 
 @Injectable()
 export class ArtistService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  getAllArtists(): Artist[] {
+  getAllArtists(): ArtistEntity[] {
     return this.databaseService.artists;
   }
 
-  getArtistById(id: string): Artist {
+  getArtistById(id: string): ArtistEntity {
     if (!validate(id)) {
       throw new BadRequestException('Invalid artistId');
     }
@@ -30,7 +31,7 @@ export class ArtistService {
     return artist;
   }
 
-  createArtist(createArtistDto: ArtistDto): Artist {
+  createArtist(createArtistDto: ArtistDto): ArtistEntity {
     if (!createArtistDto.name || createArtistDto.name.trim() === '') {
       throw new BadRequestException('Name is required');
     }
@@ -45,7 +46,7 @@ export class ArtistService {
     return newArtist;
   }
 
-  updateArtist(id: string, updateArtistDto: ArtistDto): void {
+  updateArtist(id: string, updateArtistDto: ArtistDto) {
     const artist = this.getArtistById(id);
 
     if (
@@ -60,10 +61,7 @@ export class ArtistService {
     artist.grammy = updateArtistDto.grammy;
   }
 
-  deleteArtist(id: string): void {
-    if (!validate(id)) {
-      throw new BadRequestException('Invalid userId');
-    }
+  deleteArtist(id: string): ArtistEntity {
     const artistIndex = this.databaseService.artists.findIndex(
       (artist) => artist.id === id,
     );
@@ -83,6 +81,8 @@ export class ArtistService {
       }
     });
 
-    this.databaseService.artists.splice(artistIndex, 1);
+    const [deletedArtist] = this.databaseService.artists.splice(artistIndex, 1);
+
+    return deletedArtist;
   }
 }

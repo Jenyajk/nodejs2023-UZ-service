@@ -1,7 +1,5 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,6 +7,7 @@ import { v4 as uuidv4, validate } from 'uuid';
 import { Album } from '../models/album.model';
 import { AlbumDto } from './album.dto';
 import { DatabaseService } from '../database/database.service';
+import { AlbumEntity } from './artist.entity';
 
 @Injectable()
 export class AlbumService {
@@ -18,18 +17,14 @@ export class AlbumService {
     return this.databaseService.albums;
   }
 
-  getAlbumById(id: string): Album {
+  getAlbumById(id: string): AlbumEntity {
     if (!validate(id)) {
       throw new BadRequestException('Invalid albumId');
     }
-
-    const album = this.databaseService.getAlbumById(id);
-
-    if (!album) {
-      throw new BadRequestException('Album not found');
-    }
-
-    return album;
+    return (
+      this.databaseService.albums.find(({ id: albumId }) => albumId === id) ??
+      null
+    );
   }
 
   createAlbum(createAlbumDto: AlbumDto): Album {
@@ -48,7 +43,7 @@ export class AlbumService {
     return newAlbum;
   }
 
-  updateAlbum(id: string, createAlbumDto: AlbumDto): Album {
+  updateAlbum(id: string, createAlbumDto: AlbumDto) {
     const album = this.getAlbumById(id);
 
     if (!createAlbumDto.name || createAlbumDto.name.trim() === '') {

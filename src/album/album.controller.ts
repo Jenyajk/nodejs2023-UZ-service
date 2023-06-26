@@ -8,6 +8,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
 } from '@nestjs/common';
@@ -15,23 +16,36 @@ import { Album } from '../models/album.model';
 import { AlbumDto } from './album.dto';
 import { AlbumService } from './album.service';
 import { validate } from 'uuid';
+import { AlbumEntity } from './artist.entity';
 
 @Controller('album')
 export class AlbumController {
   constructor(private readonly albumsService: AlbumService) {}
 
   @Get()
-  getAllAlbums(): Album[] {
+  @HttpCode(HttpStatus.OK)
+  getAllAlbums(): AlbumEntity[] {
     return this.albumsService.getAllAlbums();
   }
 
   @Get(':id')
-  getAlbumById(@Param('id') id: string): Album {
-    try {
-      return this.albumsService.getAlbumById(id);
-    } catch (error) {
-      throw new NotFoundException(error.message);
+  @HttpCode(HttpStatus.OK)
+  getAlbumById(
+    @Param(
+      'id',
+      new ParseUUIDPipe({
+        version: '4',
+        errorHttpStatusCode: HttpStatus.BAD_REQUEST,
+      }),
+    )
+    id: string,
+  ): AlbumEntity {
+    const album = this.albumsService.getAlbumById(id);
+    if (!album) {
+      throw new NotFoundException('Album not found');
     }
+
+    return album;
   }
 
   @Post()
@@ -48,10 +62,7 @@ export class AlbumController {
   }
 
   @Put(':id')
-  updateAlbum(
-    @Param('id') id: string,
-    @Body() createAlbumDto: AlbumDto,
-  ): Album {
+  updateAlbum(@Param('id') id: string, @Body() createAlbumDto: AlbumDto) {
     if (!createAlbumDto.name || String(createAlbumDto.name).trim() === '') {
       throw new BadRequestException('Name is required');
     }

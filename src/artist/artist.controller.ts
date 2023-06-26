@@ -13,20 +13,22 @@ import {
   Put,
 } from '@nestjs/common';
 import { ArtistDto } from './artist.dto';
-import { Artist } from '../models/artist.model';
 import { ArtistService } from './artist.service';
+import { validate } from 'uuid';
 
 @Controller('artist')
 export class ArtistController {
-  constructor(private readonly artistsService: ArtistService) {}
+  constructor(private artistsService: ArtistService) {}
 
   @Get()
-  getAllArtists(): Artist[] {
+  @HttpCode(HttpStatus.OK)
+  getAllArtists() {
     return this.artistsService.getAllArtists();
   }
 
   @Get(':id')
-  getArtistById(@Param('id') id: string): Artist {
+  @HttpCode(HttpStatus.OK)
+  getArtistById(@Param('id') id: string) {
     try {
       return this.artistsService.getArtistById(id);
     } catch (error) {
@@ -44,7 +46,7 @@ export class ArtistController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  createArtist(@Body() createArtistDto: ArtistDto): Artist {
+  createArtist(@Body() createArtistDto: ArtistDto) {
     try {
       return this.artistsService.createArtist(createArtistDto);
     } catch (error) {
@@ -53,24 +55,23 @@ export class ArtistController {
   }
 
   @Put(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  updateArtist(
-    @Param('id') id: string,
-    @Body() updateArtistDto: ArtistDto,
-  ): void {
-    try {
-      this.artistsService.updateArtist(id, updateArtistDto);
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
+  @HttpCode(HttpStatus.OK)
+  updateArtist(@Param('id') id: string, @Body() updateArtistDto: ArtistDto) {
+    const artist = this.artistsService.getArtistById(id);
+    if (!artist) {
+      throw new NotFoundException('Artist not found');
     }
+
+    artist.name = updateArtistDto.name;
+    artist.grammy = updateArtistDto.grammy;
+
+    return artist;
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteArtist(@Param('id') id: string): void {
+  deleteArtist(@Param('id') id: string) {
+    validate(id);
     const artist = this.artistsService.getArtistById(id);
     if (!artist) {
       throw new NotFoundException('Artist not found');
